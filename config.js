@@ -29,5 +29,15 @@ export const CONFIG = {
     {id:'m_gpu',  for:'gpu',  name:'Диспетчер инференса',    cost:90000},
     {id:'m_inf',  for:'inf',  name:'Оператор Astra',         cost:1200000},
     {id:'m_ver',  for:'ver',  name:'Verifier: авто-аудит',   cost:5000000}
+  ],
+  quests: [
+    {id:'q1', text:'Запусти токенизацию: купи 1 BPE',        goal:{type:'own', id:'bpe', n:1},       reward:50},
+    {id:'q2', text:'Нарасти нарезку: 5 BPE',                  goal:{type:'own', id:'bpe', n:5},       reward:200},
+    {id:'q3', text:'Контекст важен: 1 Матрица Attention',     goal:{type:'own', id:'attn', n:1},      reward:400},
+    {id:'q4', text:'Первый контракт: выполни любой',          goal:{type:'contracts', n:1},           reward:1000},
+    {id:'q5', text:'Автоматизация: найми Архитектора BPE',    goal:{type:'hire', id:'m_bpe', n:1},    reward:2500},
+    {id:'q6', text:'Масштаб: 5 Матриц Attention',             goal:{type:'own', id:'attn', n:5},      reward:5000},
+    {id:'q7', text:'Переживи серый шлюз: купи Model Verifier',goal:{type:'own', id:'ver', n:1},       reward:50000},
+    {id:'q8', text:'Путь к сингулярности: lifetime 1 млн',    goal:{type:'lifetime', n:1000000},      reward:250000}
   ]
 };

@@ -11,8 +11,11 @@ const state = {
   contractOffer: null, // {target, reward, acceptUntil}
   contractActive: null, // {target, reward, progress, endsAt}
   lastOfferTime: 0,
+  contractsDone: 0,
   // Менеджеры
-  managers: {}
+  managers: {},
+  // Квесты
+  questIndex: 0
 };
 
 // Инициализация owned и purchased
@@ -262,6 +265,8 @@ setInterval(() => {
   updateContractOffer();
   updateContractActive();
   tryOfferContract();
+  completeQuest();
+  renderQuests();
 }, 100);
 
 // Тик менеджеров (5s)
@@ -371,6 +376,7 @@ function updateContractActive() {
   // Проверяем успех
   if (contract.progress >= contract.target) {
     state.money += contract.reward;
+    state.contractsDone++;
     showToast(`Контракт выполнен: +${formatNumber(contract.reward)}`, 'success');
     state.contractActive = null;
     const contractsEl = document.getElementById('contracts');
@@ -931,12 +937,107 @@ window.addEventListener('resize', () => {
   initCanvas();
 });
 
+// ========== Квесты ==========
+function getQuestProgress(quest) {
+  const goal = quest.goal;
+  
+  switch (goal.type) {
+    case 'own':
+      return Math.min(state.owned[goal.id] || 0, goal.n);
+    case 'hire':
+      return state.managers[goal.id] ? 1 : 0;
+    case 'contracts':
+      return Math.min(state.contractsDone, goal.n);
+    case 'lifetime':
+      return Math.min(Math.floor(state.lifetime), goal.n);
+    default:
+      return 0;
+  }
+}
+
+function isQuestComplete(quest) {
+  return getQuestProgress(quest) >= quest.goal.n;
+}
+
+function completeQuest() {
+  if (state.questIndex >= CONFIG.quests.length) return;
+  
+  const quest = CONFIG.quests[state.questIndex];
+  if (!isQuestComplete(quest)) return;
+  
+  state.money += quest.reward;
+  showToast(`Квест выполнен: +${formatNumber(quest.reward)}`, 'success');
+  state.questIndex++;
+  renderQuests();
+}
+
+function renderQuests() {
+  const questsEl = document.getElementById('quests');
+  if (!questsEl) return;
+  
+  questsEl.innerHTML = '';
+  
+  // Все квесты пройдены
+  if (state.questIndex >= CONFIG.quests.length) {
+    const slot = document.createElement('div');
+    slot.className = 'quest-slot quest-slot--complete';
+    slot.innerHTML = '<div class="quest-slot__text">ВСЕ КВЕСТЫ ПРОЙДЕНЫ</div>';
+    questsEl.appendChild(slot);
+    return;
+  }
+  
+  // Предыдущий квест (если есть)
+  if (state.questIndex > 0) {
+    const prevQuest = CONFIG.quests[state.questIndex - 1];
+    const slot = document.createElement('div');
+    slot.className = 'quest-slot quest-slot--done';
+    slot.innerHTML = `
+      <div class="quest-slot__label">Предыдущий</div>
+      <div class="quest-slot__text">ВЫПОЛНЕНО</div>
+    `;
+    questsEl.appendChild(slot);
+  }
+  
+  // Текущий квест
+  const currentQuest = CONFIG.quests[state.questIndex];
+  const progress = getQuestProgress(currentQuest);
+  const progressPct = (progress / currentQuest.goal.n) * 100;
+  
+  const currentSlot = document.createElement('div');
+  currentSlot.className = 'quest-slot quest-slot--current';
+  currentSlot.innerHTML = `
+    <div class="quest-slot__label">Текущий</div>
+    <div class="quest-slot__text">${currentQuest.text}</div>
+    <div class="quest-slot__progress-bar">
+      <div class="quest-slot__progress-fill" style="width:${progressPct}%"></div>
+    </div>
+    <div class="quest-slot__stats">
+      <span>${progress}/${currentQuest.goal.n}</span>
+      <span class="quest-slot__reward">+${formatNumber(currentQuest.reward)}</span>
+    </div>
+  `;
+  questsEl.appendChild(currentSlot);
+  
+  // Следующий квест (если есть)
+  if (state.questIndex < CONFIG.quests.length - 1) {
+    const nextQuest = CONFIG.quests[state.questIndex + 1];
+    const slot = document.createElement('div');
+    slot.className = 'quest-slot quest-slot--next';
+    slot.innerHTML = `
+      <div class="quest-slot__label">Следующий</div>
+      <div class="quest-slot__text">🔒 ${nextQuest.text}</div>
+    `;
+    questsEl.appendChild(slot);
+  }
+}
+
 // Инициализация
 initCanvas();
 animate();
 renderShop();
 renderUpgrades();
 renderManagers();
+renderQuests();
 
 // ========== Система событий ==========
 let toastTimeout = null;
