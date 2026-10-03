@@ -413,6 +413,25 @@ body {
   box-shadow: none;
 }
 
+/* ---------- Upgrades ---------- */
+.upgrades {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item--purchased {
+  border-color: var(--green);
+  box-shadow: 0 0 20px rgba(70, 247, 154, 0.25), inset 0 0 20px rgba(70, 247, 154, 0.08);
+}
+
+.item__buy--done {
+  background: linear-gradient(135deg, rgba(70, 247, 154, 0.3), rgba(70, 247, 154, 0.15));
+  color: var(--green);
+  border: 1px solid var(--green);
+  box-shadow: 0 0 15px rgba(70, 247, 154, 0.3);
+}
+
 /* Custom scrollbar */
 .side-panel::-webkit-scrollbar {
   width: 5px;
