@@ -5,7 +5,8 @@ const state = {
   lifetime: 0,
   keys: 0,
   owned: {},
-  purchased: {}
+  purchased: {},
+  debuffUntil: 0
 };
 
 // Инициализация owned и purchased
@@ -28,6 +29,11 @@ function getMultipliers() {
     }
     if (u.global) globalMult *= u.global;
   });
+  
+  // Дебафф серого шлюза
+  if (state.debuffUntil > Date.now()) {
+    globalMult *= 0.5;
+  }
   
   return { buildingMult, globalMult };
 }
@@ -250,3 +256,64 @@ setInterval(() => {
 // Инициализация
 renderShop();
 renderUpgrades();
+
+// ========== Система событий ==========
+let toastTimeout = null;
+
+function showToast(text, type) {
+  const toastEl = document.getElementById('toast');
+  if (!toastEl) return;
+  
+  // Очищаем предыдущий таймер
+  if (toastTimeout) clearTimeout(toastTimeout);
+  
+  // Обновляем содержимое и класс
+  toastEl.textContent = text;
+  toastEl.className = 'toast toast--' + type;
+  toastEl.style.display = 'block';
+  
+  // Авто-скрытие через 4s
+  toastTimeout = setTimeout(() => {
+    toastEl.style.display = 'none';
+  }, 4000);
+}
+
+function showStamp() {
+  const stampEl = document.getElementById('stamp');
+  if (!stampEl) return;
+  
+  // Показываем штамп с анимацией
+  stampEl.style.display = 'flex';
+  stampEl.classList.remove('stamp--animate');
+  // Форсируем reflow для перезапуска анимации
+  void stampEl.offsetWidth;
+  stampEl.classList.add('stamp--animate');
+  
+  // Скрываем через 2.4s
+  setTimeout(() => {
+    stampEl.style.display = 'none';
+    stampEl.classList.remove('stamp--animate');
+  }, 2400);
+}
+
+function triggerEvent() {
+  // События только после lifetime >= 500
+  if (state.lifetime < 500) return;
+  
+  // Шанс 55%
+  if (Math.random() > 0.55) return;
+  
+  // Проверяем Verifier
+  if (state.purchased.ver) {
+    // Зелёный тост + штамп
+    showToast('Серый шлюз заблокирован: ZERO SPOOFING', 'success');
+    showStamp();
+  } else {
+    // Красный тост + дебафф
+    showToast('Серый шлюз перехватывает трафик: −50% дохода на 20s', 'danger');
+    state.debuffUntil = Date.now() + 20000; // 20 секунд
+  }
+}
+
+// Таймер событий: каждые 45 секунд
+setInterval(triggerEvent, 45000);
