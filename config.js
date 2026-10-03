@@ -9,7 +9,6 @@ export const CONFIG = {
     {id:'ver',  name:'Model Verifier',                  desc:'100% GENUINE, ZERO SPOOFING: авто-бенчмарки и фингерпринты вскрывают серые шлюзы и даунгрейды.',  cost:200000, rate:1500}
   ],
   upgrades: [
-    {id:'u4', name:'Оверклок ядра',        desc:'Клик по кубу-ядру ×5.',                          cost:2500},
     {id:'u1', name:'Оптимизация BPE',      desc:'Доход от «Токенизация (BPE)» ×2.',               cost:800,    req:{bpe:5},  mult:{bpe:2}},
     {id:'u2', name:'Flash-Attention',      desc:'Доход от «Матрицы Attention» ×2.',               cost:6000,   req:{attn:5}, mult:{attn:2}},
     {id:'u3', name:'Квантование FP8',      desc:'Доход от «Вероятностный инференс» ×2.',          cost:70000,  req:{gpu:5},  mult:{gpu:2}},
