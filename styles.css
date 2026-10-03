@@ -311,6 +311,108 @@ body {
   gap: 16px;
 }
 
+/* ---------- Shop Items ---------- */
+.shop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item {
+  background: rgba(24, 16, 32, 0.6);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+  transition: opacity 0.3s, filter 0.3s;
+}
+
+.item--disabled {
+  opacity: 0.55;
+  filter: grayscale(0.4) brightness(0.7);
+}
+
+.item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.item__name {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.item__count {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(233, 213, 255, 0.45);
+  letter-spacing: 0.02em;
+}
+
+.item__desc {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.item__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.item__price {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--violet);
+}
+
+.item__buy {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--deep), var(--primary));
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+  transition: box-shadow 0.3s, transform 0.2s, filter 0.3s;
+}
+
+.item__buy:hover:not(:disabled) {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+  transform: scale(1.03);
+}
+
+.item__buy:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.item__buy:disabled {
+  filter: grayscale(0.6) brightness(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* Custom scrollbar */
 .side-panel::-webkit-scrollbar {
   width: 5px;
