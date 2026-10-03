@@ -612,18 +612,32 @@ function drawCore() {
   const center = Math.floor(MAP_SIZE / 2);
   const { x, y } = tileToScreen(center, center);
   
-  const size = 30;
+  const size = 36; // Увеличен на 20%
   const pulse = Math.sin(animTime * 2) * 0.1 + 1;
   
-  // Луч вверх
+  // Радиальный ореол под кубом
   ctx.save();
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
-  ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
-  ctx.lineWidth = 2;
+  const haloGradient = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 60);
+  haloGradient.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+  haloGradient.addColorStop(1, 'rgba(124, 58, 237, 0)');
+  ctx.fillStyle = haloGradient;
+  ctx.beginPath();
+  ctx.arc(x, y + 10, 60, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  
+  // Луч вверх (градиентный с glow)
+  ctx.save();
+  const beamGradient = ctx.createLinearGradient(x, y - size, x, y - size - 80);
+  beamGradient.addColorStop(0, 'rgba(233, 213, 255, 0.9)');
+  beamGradient.addColorStop(1, 'rgba(233, 213, 255, 0)');
+  ctx.shadowBlur = 25;
+  ctx.shadowColor = 'rgba(233, 213, 255, 0.8)';
+  ctx.strokeStyle = beamGradient;
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(x, y - size);
-  ctx.lineTo(x, y - size - 60);
+  ctx.lineTo(x, y - size - 80);
   ctx.stroke();
   ctx.restore();
   
