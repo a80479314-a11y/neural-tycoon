@@ -129,6 +129,7 @@ function renderShop() {
     if (state.money >= price) {
       state.money -= price;
       state.owned[id]++;
+      placeBuildingOnMap(id);
       updateShop();
       updateUpgrades();
       updateHUD();
@@ -501,13 +502,151 @@ function tickManagers() {
     if (state.money >= requiredMoney) {
       state.money -= price;
       state.owned[building.id]++;
+      placeBuildingOnMap(building.id);
       updateShop();
       updateHUD();
     }
   });
 }
 
+// ========== Карта ==========
+const MAP_SIZE = 7;
+const TILE_SIZE = 60;
+const MAX_CLONES = 5;
+
+// Спиральный порядок от центра
+function getSpiralOrder() {
+  const center = Math.floor(MAP_SIZE / 2);
+  const order = [];
+  
+  // Центр пропускаем (там ядро)
+  for (let ring = 1; ring <= center; ring++) {
+    // Верхняя сторона
+    for (let c = center - ring; c <= center + ring; c++) {
+      order.push([center - ring, c]);
+    }
+    // Правая сторона
+    for (let r = center - ring + 1; r <= center + ring; r++) {
+      order.push([r, center + ring]);
+    }
+    // Нижняя сторона
+    for (let c = center + ring - 1; c >= center - ring; c--) {
+      order.push([center + ring, c]);
+    }
+    // Левая сторона
+    for (let r = center + ring - 1; r > center - ring; r--) {
+      order.push([r, center - ring]);
+    }
+  }
+  
+  return order;
+}
+
+const spiralOrder = getSpiralOrder();
+let nextTileIndex = 0;
+const mapBuildings = []; // {type, tileIndex, count}
+
+function renderMap() {
+  const surface = document.getElementById('mapSurface');
+  if (!surface) return;
+  
+  const center = Math.floor(MAP_SIZE / 2);
+  
+  // Генерируем плитки
+  for (let row = 0; row < MAP_SIZE; row++) {
+    for (let col = 0; col < MAP_SIZE; col++) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.left = (col * TILE_SIZE) + 'px';
+      tile.style.top = (row * TILE_SIZE) + 'px';
+      
+      // Центральная плитка — ядро
+      if (row === center && col === center) {
+        tile.classList.add('tile--core');
+        tile.innerHTML = `
+          <div class="cube-wrapper" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotateZ(-45deg) rotateX(-60deg);">
+            <div class="cube__beam"></div>
+            <div class="cube-scene">
+              <div class="cube">
+                <div class="cube__face cube__face--top"></div>
+                <div class="cube__face cube__face--bottom"></div>
+                <div class="cube__face cube__face--front"></div>
+                <div class="cube__face cube__face--back"></div>
+                <div class="cube__face cube__face--left"></div>
+                <div class="cube__face cube__face--right"></div>
+              </div>
+            </div>
+            <div class="cube__ring"></div>
+          </div>
+        `;
+      }
+      
+      surface.appendChild(tile);
+    }
+  }
+}
+
+function placeBuildingOnMap(buildingId) {
+  // Проверяем лимит клонов
+  const existing = mapBuildings.find(b => b.type === buildingId);
+  
+  if (existing && existing.count >= MAX_CLONES) {
+    // Обновляем счётчик
+    existing.count++;
+    updateBuildingCounter(buildingId);
+    return;
+  }
+  
+  if (existing) {
+    existing.count++;
+    updateBuildingCounter(buildingId);
+    return;
+  }
+  
+  // Размещаем новый объект
+  if (nextTileIndex >= spiralOrder.length) return; // Нет свободных плиток
+  
+  const [row, col] = spiralOrder[nextTileIndex];
+  const tileIndex = nextTileIndex;
+  nextTileIndex++;
+  
+  mapBuildings.push({type: buildingId, tileIndex, count: 1});
+  
+  // Создаём DOM элемент
+  const surface = document.getElementById('mapSurface');
+  if (!surface) return;
+  
+  const building = document.createElement('div');
+  building.className = `building building--${buildingId}`;
+  building.dataset.buildingType = buildingId;
+  building.style.left = (col * TILE_SIZE) + 'px';
+  building.style.top = (row * TILE_SIZE) + 'px';
+  
+  surface.appendChild(building);
+}
+
+function updateBuildingCounter(buildingId) {
+  const existing = mapBuildings.find(b => b.type === buildingId);
+  if (!existing) return;
+  
+  const buildingEl = document.querySelector(`[data-building-type="${buildingId}"]`);
+  if (!buildingEl) return;
+  
+  // Удаляем старый счётчик если есть
+  const oldCounter = buildingEl.querySelector('.building__counter');
+  if (oldCounter) oldCounter.remove();
+  
+  // Добавляем новый счётчик если count > 1
+  if (existing.count > 1) {
+    const counter = document.createElement('div');
+    counter.className = 'building__counter';
+    counter.textContent = existing.count;
+    buildingEl.appendChild(counter);
+  }
+}
+
 // Инициализация
+renderMap();
 renderShop();
 renderUpgrades();
 renderManagers();
