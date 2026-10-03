@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 
 const state = {
-  money: 0,
+  money: 20,
   lifetime: 0,
   keys: 0,
   owned: {},
@@ -17,12 +17,10 @@ function getMultipliers() {
   const buildingMult = {};
   CONFIG.buildings.forEach(b => { buildingMult[b.id] = 1; });
   
-  let clickMult = 1;
   let globalMult = 1 + state.keys * 0.1;
   
   CONFIG.upgrades.forEach(u => {
     if (!state.purchased[u.id]) return;
-    if (u.id === 'u4') clickMult *= 5;
     if (u.mult) {
       Object.keys(u.mult).forEach(bid => {
         buildingMult[bid] *= u.mult[bid];
@@ -31,7 +29,7 @@ function getMultipliers() {
     if (u.global) globalMult *= u.global;
   });
   
-  return { buildingMult, clickMult, globalMult };
+  return { buildingMult, globalMult };
 }
 
 function formatNumber(num) {
@@ -248,20 +246,6 @@ setInterval(() => {
   updateShop();
   updateUpgrades();
 }, 100);
-
-// Клик по кубу
-const cubeWrapper = document.querySelector('.cube-wrapper');
-if (cubeWrapper) {
-  cubeWrapper.addEventListener('click', () => {
-    const { clickMult, globalMult } = getMultipliers();
-    const earned = CONFIG.clickPower * clickMult * globalMult;
-    state.money += earned;
-    state.lifetime += earned;
-    updateHUD();
-    updateShop();
-    updateUpgrades();
-  });
-}
 
 // Инициализация
 renderShop();

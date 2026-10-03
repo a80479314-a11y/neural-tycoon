@@ -185,9 +185,21 @@ body {
   grid-column: 1;
   grid-row: 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  gap: 40px;
+}
+
+.stage__hint {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-align: center;
+  opacity: 0.7;
 }
 
 @keyframes floatCube {
