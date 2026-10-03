@@ -509,31 +509,35 @@ function tickManagers() {
   });
 }
 
-// ========== Карта ==========
+// ========== Карта (Canvas 2D) ==========
 const MAP_SIZE = 7;
-const TILE_SIZE = 60;
+const TILE_W = 96;
+const TILE_H = 48;
 const MAX_CLONES = 5;
+
+const canvas = document.getElementById('map');
+const ctx = canvas ? canvas.getContext('2d') : null;
+
+let canvasWidth = 600;
+let canvasHeight = 400;
+let hoveredTile = null;
+let animTime = 0;
 
 // Спиральный порядок от центра
 function getSpiralOrder() {
   const center = Math.floor(MAP_SIZE / 2);
   const order = [];
   
-  // Центр пропускаем (там ядро)
   for (let ring = 1; ring <= center; ring++) {
-    // Верхняя сторона
     for (let c = center - ring; c <= center + ring; c++) {
       order.push([center - ring, c]);
     }
-    // Правая сторона
     for (let r = center - ring + 1; r <= center + ring; r++) {
       order.push([r, center + ring]);
     }
-    // Нижняя сторона
     for (let c = center + ring - 1; c >= center - ring; c--) {
       order.push([center + ring, c]);
     }
-    // Левая сторона
     for (let r = center + ring - 1; r > center - ring; r--) {
       order.push([r, center - ring]);
     }
@@ -544,109 +548,378 @@ function getSpiralOrder() {
 
 const spiralOrder = getSpiralOrder();
 let nextTileIndex = 0;
-const mapBuildings = []; // {type, tileIndex, count}
+const mapBuildings = []; // {type, tileIndex, count, i, j}
 
-function renderMap() {
-  const surface = document.getElementById('mapSurface');
-  if (!surface) return;
-  
-  const center = Math.floor(MAP_SIZE / 2);
-  
-  // Генерируем плитки
-  for (let row = 0; row < MAP_SIZE; row++) {
-    for (let col = 0; col < MAP_SIZE; col++) {
-      const tile = document.createElement('div');
-      tile.className = 'tile';
-      tile.style.left = (col * TILE_SIZE) + 'px';
-      tile.style.top = (row * TILE_SIZE) + 'px';
-      
-      // Центральная плитка — ядро
-      if (row === center && col === center) {
-        tile.classList.add('tile--core');
-        tile.innerHTML = `
-          <div class="cube-wrapper" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotateZ(-45deg) rotateX(-60deg);">
-            <div class="cube__beam"></div>
-            <div class="cube-scene">
-              <div class="cube">
-                <div class="cube__face cube__face--top"></div>
-                <div class="cube__face cube__face--bottom"></div>
-                <div class="cube__face cube__face--front"></div>
-                <div class="cube__face cube__face--back"></div>
-                <div class="cube__face cube__face--left"></div>
-                <div class="cube__face cube__face--right"></div>
-              </div>
-            </div>
-            <div class="cube__ring"></div>
-          </div>
-        `;
-      }
-      
-      surface.appendChild(tile);
-    }
-  }
+// Изометрическая проекция
+function tileToScreen(i, j) {
+  const centerX = canvasWidth / 2;
+  const centerY = canvasHeight / 2 - 50;
+  const x = centerX + (i - j) * TILE_W / 2;
+  const y = centerY + (i + j) * TILE_H / 2;
+  return { x, y };
 }
 
+// Обратное преобразование (экран → тайл)
+function screenToTile(sx, sy) {
+  const centerX = canvasWidth / 2;
+  const centerY = canvasHeight / 2 - 50;
+  const dx = sx - centerX;
+  const dy = sy - centerY;
+  const i = (dx / (TILE_W / 2) + dy / (TILE_H / 2)) / 2;
+  const j = (dy / (TILE_H / 2) - dx / (TILE_W / 2)) / 2;
+  return { i: Math.floor(i), j: Math.floor(j) };
+}
+
+// Инициализация canvas
+function initCanvas() {
+  if (!canvas) return;
+  
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  
+  canvasWidth = rect.width;
+  canvasHeight = rect.height;
+  
+  canvas.width = canvasWidth * dpr;
+  canvas.height = canvasHeight * dpr;
+  
+  ctx.scale(dpr, dpr);
+}
+
+// Отрисовка ромбовидного тайла
+function drawTile(i, j, highlight = false) {
+  const { x, y } = tileToScreen(i, j);
+  
+  ctx.beginPath();
+  ctx.moveTo(x, y - TILE_H / 2);
+  ctx.lineTo(x + TILE_W / 2, y);
+  ctx.lineTo(x, y + TILE_H / 2);
+  ctx.lineTo(x - TILE_W / 2, y);
+  ctx.closePath();
+  
+  if (highlight) {
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+    ctx.fill();
+  }
+  
+  ctx.strokeStyle = 'rgba(190, 120, 255, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// Отрисовка ядра (изометрический куб)
+function drawCore() {
+  const center = Math.floor(MAP_SIZE / 2);
+  const { x, y } = tileToScreen(center, center);
+  
+  const size = 30;
+  const pulse = Math.sin(animTime * 2) * 0.1 + 1;
+  
+  // Луч вверх
+  ctx.save();
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+  ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x, y - size - 60);
+  ctx.stroke();
+  ctx.restore();
+  
+  // Эллипс-кольцо под кубом
+  ctx.save();
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = 'rgba(168, 85, 247, 0.5)';
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(x, y + size + 10, 35, 12, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  
+  // Куб (три видимые грани)
+  ctx.save();
+  ctx.shadowBlur = 30;
+  ctx.shadowColor = 'rgba(124, 58, 237, 0.6)';
+  
+  // Верхняя грань (светлая)
+  ctx.fillStyle = 'rgba(233, 213, 255, 0.4)';
+  ctx.strokeStyle = 'rgba(216, 180, 254, 0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x, y - size * pulse);
+  ctx.lineTo(x + size * pulse, y - size * 0.5 * pulse);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x - size * pulse, y - size * 0.5 * pulse);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Левая грань
+  ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
+  ctx.beginPath();
+  ctx.moveTo(x - size * pulse, y - size * 0.5 * pulse);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x, y + size * pulse);
+  ctx.lineTo(x - size * pulse, y + size * 0.5 * pulse);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Правая грань
+  ctx.fillStyle = 'rgba(124, 58, 237, 0.2)';
+  ctx.beginPath();
+  ctx.moveTo(x + size * pulse, y - size * 0.5 * pulse);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x, y + size * pulse);
+  ctx.lineTo(x + size * pulse, y + size * 0.5 * pulse);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+// Отрисовка зданий
+function drawBuilding(building) {
+  const { x, y } = tileToScreen(building.i, building.j);
+  const pulse = Math.sin(animTime * 3 + building.tileIndex) * 0.1 + 1;
+  
+  ctx.save();
+  
+  switch (building.type) {
+    case 'bpe': // Пульсирующая сфера на ножке
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
+      
+      // Ножка
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - 20);
+      ctx.stroke();
+      
+      // Сфера
+      const radius = 10 * pulse;
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.7)';
+      ctx.beginPath();
+      ctx.arc(x, y - 25, radius, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+      
+    case 'attn': // Сфера с линиями к соседям
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+      
+      // Линии к соседним тайлам
+      ctx.strokeStyle = 'rgba(192, 132, 252, 0.4)';
+      ctx.lineWidth = 1.5;
+      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      directions.forEach(([di, dj]) => {
+        const ni = building.i + di;
+        const nj = building.j + dj;
+        if (ni >= 0 && ni < MAP_SIZE && nj >= 0 && nj < MAP_SIZE) {
+          const { x: nx, y: ny } = tileToScreen(ni, nj);
+          ctx.beginPath();
+          ctx.moveTo(x, y - 25);
+          ctx.lineTo(nx, ny);
+          ctx.stroke();
+        }
+      });
+      
+      // Сфера
+      ctx.fillStyle = 'rgba(192, 132, 252, 0.7)';
+      ctx.beginPath();
+      ctx.arc(x, y - 25, 12, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+      
+    case 'gpu': // Пирамида
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+      ctx.fillStyle = 'rgba(192, 132, 252, 0.6)';
+      ctx.strokeStyle = 'rgba(216, 180, 254, 0.8)';
+      ctx.lineWidth = 1.5;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y - 40);
+      ctx.lineTo(x + 15, y);
+      ctx.lineTo(x - 15, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+      
+    case 'inf': // Обелиск с молнией
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
+      ctx.strokeStyle = 'rgba(192, 132, 252, 0.8)';
+      ctx.lineWidth = 1.5;
+      
+      // Обелиск
+      ctx.beginPath();
+      ctx.moveTo(x, y - 50);
+      ctx.lineTo(x + 10, y - 40);
+      ctx.lineTo(x + 10, y);
+      ctx.lineTo(x - 10, y);
+      ctx.lineTo(x - 10, y - 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Молния
+      const lightningOpacity = Math.sin(animTime * 5) * 0.5 + 0.5;
+      ctx.strokeStyle = `rgba(192, 132, 252, ${lightningOpacity})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 50);
+      ctx.lineTo(x - 3, y - 55);
+      ctx.lineTo(x + 2, y - 60);
+      ctx.stroke();
+      break;
+      
+    case 'ver': // Купол-щит
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(70, 247, 154, 0.8)';
+      ctx.fillStyle = 'rgba(70, 247, 154, 0.3)';
+      ctx.strokeStyle = 'rgba(70, 247, 154, 0.8)';
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      ctx.arc(x, y - 15, 18, Math.PI, 0);
+      ctx.lineTo(x + 18, y);
+      ctx.lineTo(x - 18, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+  }
+  
+  // Счётчик клонов
+  if (building.count > 1) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(24, 16, 32, 0.9)';
+    ctx.strokeStyle = 'rgba(190, 120, 255, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x + 20, y - 35, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(244, 238, 252, 1)';
+    ctx.font = '600 12px Oswald';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(building.count.toString(), x + 20, y - 35);
+  }
+  
+  ctx.restore();
+}
+
+// Основной цикл отрисовки
+function renderMap() {
+  if (!ctx) return;
+  
+  // Очистка
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  
+  // Собираем все объекты для сортировки
+  const objects = [];
+  
+  // Тайлы
+  for (let i = 0; i < MAP_SIZE; i++) {
+    for (let j = 0; j < MAP_SIZE; j++) {
+      objects.push({ type: 'tile', i, j, depth: i + j });
+    }
+  }
+  
+  // Ядро
+  const center = Math.floor(MAP_SIZE / 2);
+  objects.push({ type: 'core', i: center, j: center, depth: center + center });
+  
+  // Здания
+  mapBuildings.forEach(b => {
+    objects.push({ type: 'building', building: b, depth: b.i + b.j });
+  });
+  
+  // Сортировка по глубине (painter's algorithm)
+  objects.sort((a, b) => a.depth - b.depth);
+  
+  // Отрисовка
+  objects.forEach(obj => {
+    if (obj.type === 'tile') {
+      const isHovered = hoveredTile && hoveredTile.i === obj.i && hoveredTile.j === obj.j;
+      drawTile(obj.i, obj.j, isHovered);
+    } else if (obj.type === 'core') {
+      drawCore();
+    } else if (obj.type === 'building') {
+      drawBuilding(obj.building);
+    }
+  });
+}
+
+// Размещение здания на карте
 function placeBuildingOnMap(buildingId) {
-  // Проверяем лимит клонов
   const existing = mapBuildings.find(b => b.type === buildingId);
   
   if (existing && existing.count >= MAX_CLONES) {
-    // Обновляем счётчик
     existing.count++;
-    updateBuildingCounter(buildingId);
     return;
   }
   
   if (existing) {
     existing.count++;
-    updateBuildingCounter(buildingId);
     return;
   }
   
-  // Размещаем новый объект
-  if (nextTileIndex >= spiralOrder.length) return; // Нет свободных плиток
+  if (nextTileIndex >= spiralOrder.length) return;
   
-  const [row, col] = spiralOrder[nextTileIndex];
+  const [i, j] = spiralOrder[nextTileIndex];
   const tileIndex = nextTileIndex;
   nextTileIndex++;
   
-  mapBuildings.push({type: buildingId, tileIndex, count: 1});
-  
-  // Создаём DOM элемент
-  const surface = document.getElementById('mapSurface');
-  if (!surface) return;
-  
-  const building = document.createElement('div');
-  building.className = `building building--${buildingId}`;
-  building.dataset.buildingType = buildingId;
-  building.style.left = (col * TILE_SIZE) + 'px';
-  building.style.top = (row * TILE_SIZE) + 'px';
-  
-  surface.appendChild(building);
+  mapBuildings.push({ type: buildingId, tileIndex, count: 1, i, j });
 }
 
-function updateBuildingCounter(buildingId) {
-  const existing = mapBuildings.find(b => b.type === buildingId);
-  if (!existing) return;
+// Hover обработка
+if (canvas) {
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    
+    const tile = screenToTile(mx, my);
+    
+    if (tile.i >= 0 && tile.i < MAP_SIZE && tile.j >= 0 && tile.j < MAP_SIZE) {
+      hoveredTile = tile;
+    } else {
+      hoveredTile = null;
+    }
+  });
   
-  const buildingEl = document.querySelector(`[data-building-type="${buildingId}"]`);
-  if (!buildingEl) return;
-  
-  // Удаляем старый счётчик если есть
-  const oldCounter = buildingEl.querySelector('.building__counter');
-  if (oldCounter) oldCounter.remove();
-  
-  // Добавляем новый счётчик если count > 1
-  if (existing.count > 1) {
-    const counter = document.createElement('div');
-    counter.className = 'building__counter';
-    counter.textContent = existing.count;
-    buildingEl.appendChild(counter);
-  }
+  canvas.addEventListener('mouseleave', () => {
+    hoveredTile = null;
+  });
 }
+
+// Анимационный цикл
+function animate() {
+  animTime += 0.016; // ~60fps
+  renderMap();
+  requestAnimationFrame(animate);
+}
+
+// Resize handler
+window.addEventListener('resize', () => {
+  initCanvas();
+});
 
 // Инициализация
-renderMap();
+initCanvas();
+animate();
 renderShop();
 renderUpgrades();
 renderManagers();
