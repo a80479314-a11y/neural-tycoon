@@ -6,12 +6,19 @@ const state = {
   keys: 0,
   owned: {},
   purchased: {},
-  debuffUntil: 0
+  debuffUntil: 0,
+  // Контракты
+  contractOffer: null, // {target, reward, acceptUntil}
+  contractActive: null, // {target, reward, progress, endsAt}
+  lastOfferTime: 0,
+  // Менеджеры
+  managers: {}
 };
 
 // Инициализация owned и purchased
 CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
 CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
+CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
 
 // Единая функция множителей
 function getMultipliers() {
@@ -251,11 +258,259 @@ setInterval(() => {
   updateHUD();
   updateShop();
   updateUpgrades();
+  updateContractOffer();
+  updateContractActive();
+  tryOfferContract();
 }, 100);
+
+// Тик менеджеров (5s)
+setInterval(tickManagers, 5000);
+
+// ========== Контракты ==========
+function renderContractOffer() {
+  const contractsEl = document.getElementById('contracts');
+  if (!contractsEl) return;
+  
+  // Очищаем
+  contractsEl.innerHTML = '';
+  
+  if (!state.contractOffer) return;
+  
+  const offer = state.contractOffer;
+  const timeLeft = Math.max(0, Math.ceil((offer.acceptUntil - Date.now()) / 1000));
+  
+  const item = document.createElement('div');
+  item.className = 'item';
+  item.innerHTML = `
+    <div class="item__header">
+      <span class="item__name">Оффер контракта</span>
+    </div>
+    <div class="item__desc">Обеспечить ${formatNumber(offer.target)} дохода за ${CONFIG.contracts.duration}s. Награда: ${formatNumber(offer.reward)}</div>
+    <div class="contract__timer">Принять через: ${timeLeft}s</div>
+    <div class="item__row">
+      <button class="item__buy" data-contract-accept>ПРИНЯТЬ</button>
+    </div>
+  `;
+  
+  contractsEl.appendChild(item);
+  
+  // Обработчик принятия
+  const acceptBtn = item.querySelector('[data-contract-accept]');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      if (!state.contractOffer) return;
+      
+      // Активируем контракт
+      state.contractActive = {
+        target: state.contractOffer.target,
+        reward: state.contractOffer.reward,
+        progress: 0,
+        endsAt: Date.now() + CONFIG.contracts.duration * 1000
+      };
+      state.contractOffer = null;
+      
+      showToast(`Контракт принят: ${formatNumber(state.contractActive.target)} за ${CONFIG.contracts.duration}s`, 'info');
+      renderContractActive();
+    });
+  }
+}
+
+function renderContractActive() {
+  const contractsEl = document.getElementById('contracts');
+  if (!contractsEl) return;
+  
+  // Очищаем
+  contractsEl.innerHTML = '';
+  
+  if (!state.contractActive) return;
+  
+  const contract = state.contractActive;
+  const timeLeft = Math.max(0, Math.ceil((contract.endsAt - Date.now()) / 1000));
+  const progressPct = Math.min(100, (contract.progress / contract.target) * 100);
+  
+  const item = document.createElement('div');
+  item.className = 'item';
+  item.innerHTML = `
+    <div class="item__header">
+      <span class="item__name">Активный контракт</span>
+    </div>
+    <div class="item__desc">Прогресс: ${formatNumber(contract.progress)} / ${formatNumber(contract.target)}</div>
+    <div class="contract__progress-bar">
+      <div class="contract__progress-fill" style="width:${progressPct}%"></div>
+    </div>
+    <div class="contract__timer">Осталось: ${timeLeft}s</div>
+  `;
+  
+  contractsEl.appendChild(item);
+}
+
+function updateContractOffer() {
+  if (!state.contractOffer) return;
+  
+  // Проверяем протухание
+  if (Date.now() > state.contractOffer.acceptUntil) {
+    state.contractOffer = null;
+    const contractsEl = document.getElementById('contracts');
+    if (contractsEl) contractsEl.innerHTML = '';
+  } else {
+    renderContractOffer();
+  }
+}
+
+function updateContractActive() {
+  if (!state.contractActive) return;
+  
+  const contract = state.contractActive;
+  const income = getIncome();
+  const dt = 0.1; // 100ms тик
+  
+  // Накапливаем прогресс
+  contract.progress += income * dt;
+  
+  // Проверяем успех
+  if (contract.progress >= contract.target) {
+    state.money += contract.reward;
+    showToast(`Контракт выполнен: +${formatNumber(contract.reward)}`, 'success');
+    state.contractActive = null;
+    const contractsEl = document.getElementById('contracts');
+    if (contractsEl) contractsEl.innerHTML = '';
+    return;
+  }
+  
+  // Проверяем провал
+  if (Date.now() > contract.endsAt) {
+    showToast('Контракт просрочен', 'muted');
+    state.contractActive = null;
+    const contractsEl = document.getElementById('contracts');
+    if (contractsEl) contractsEl.innerHTML = '';
+    return;
+  }
+  
+  renderContractActive();
+}
+
+function tryOfferContract() {
+  // Проверяем условия
+  if (state.lifetime < CONFIG.contracts.firstOfferAt) return;
+  if (state.contractOffer || state.contractActive) return;
+  
+  const now = Date.now();
+  if (now - state.lastOfferTime < CONFIG.contracts.offerEvery * 1000) return;
+  
+  // Создаём оффер
+  const tps = getIncome();
+  const target = Math.ceil(Math.max(tps, 1) * CONFIG.contracts.duration * CONFIG.contracts.pressure + 50);
+  const reward = Math.ceil(target * CONFIG.contracts.rewardRate);
+  
+  state.contractOffer = {
+    target,
+    reward,
+    acceptUntil: now + CONFIG.contracts.acceptWindow * 1000
+  };
+  state.lastOfferTime = now;
+  
+  renderContractOffer();
+}
+
+// ========== Менеджеры ==========
+function renderManagers() {
+  const managersEl = document.getElementById('managers');
+  if (!managersEl) return;
+  
+  CONFIG.managers.forEach(manager => {
+    const building = CONFIG.buildings.find(b => b.id === manager.for);
+    if (!building) return;
+    
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.dataset.managerId = manager.id;
+    
+    item.innerHTML = `
+      <div class="item__header">
+        <span class="item__name">${manager.name}</span>
+      </div>
+      <div class="item__desc">Авто-покупает «${building.name}» каждые 5s при балансе >= цены ×2</div>
+      <div class="item__row">
+        <span class="item__price">${formatNumber(manager.cost)}</span>
+        <button class="item__buy" data-hire-manager="${manager.id}">НАНЯТЬ</button>
+      </div>
+    `;
+    
+    managersEl.appendChild(item);
+  });
+  
+  // Обработчики найма
+  managersEl.addEventListener('click', (e) => {
+    const hireBtn = e.target.closest('[data-hire-manager]');
+    if (!hireBtn || hireBtn.disabled) return;
+    
+    const id = hireBtn.dataset.hireManager;
+    const manager = CONFIG.managers.find(m => m.id === id);
+    if (!manager || state.managers[id]) return;
+    
+    if (state.money >= manager.cost) {
+      state.money -= manager.cost;
+      state.managers[id] = true;
+      updateManagers();
+      updateHUD();
+    }
+  });
+}
+
+function updateManagers() {
+  CONFIG.managers.forEach(manager => {
+    const item = document.querySelector(`[data-manager-id="${manager.id}"]`);
+    if (!item) return;
+    
+    const hired = state.managers[manager.id];
+    const buyBtn = item.querySelector(`[data-hire-manager="${manager.id}"]`);
+    
+    if (hired) {
+      item.classList.add('item--purchased');
+      item.classList.remove('item--disabled');
+      if (buyBtn) {
+        buyBtn.disabled = true;
+        buyBtn.textContent = '✓ НАНЯТ';
+        buyBtn.classList.add('item__buy--done');
+      }
+    } else {
+      item.classList.remove('item--purchased');
+      const canAfford = state.money >= manager.cost;
+      if (buyBtn) {
+        buyBtn.disabled = !canAfford;
+      }
+      if (canAfford) {
+        item.classList.remove('item--disabled');
+      } else {
+        item.classList.add('item--disabled');
+      }
+    }
+  });
+}
+
+function tickManagers() {
+  CONFIG.managers.forEach(manager => {
+    if (!state.managers[manager.id]) return;
+    
+    const building = CONFIG.buildings.find(b => b.id === manager.for);
+    if (!building) return;
+    
+    const price = getBuildingPrice(building);
+    const requiredMoney = price * 2;
+    
+    if (state.money >= requiredMoney) {
+      state.money -= price;
+      state.owned[building.id]++;
+      updateShop();
+      updateHUD();
+    }
+  });
+}
 
 // Инициализация
 renderShop();
 renderUpgrades();
+renderManagers();
 
 // ========== Система событий ==========
 let toastTimeout = null;

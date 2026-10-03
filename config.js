@@ -14,5 +14,20 @@ export const CONFIG = {
     {id:'u3', name:'Квантование FP8',      desc:'Доход от «Вероятностный инференс» ×2.',          cost:70000,  req:{gpu:5},  mult:{gpu:2}},
     {id:'u6', name:'Astra: 2.5x Speed',    desc:'Доход от «Флагман GPT-6 Astra» ×2.',             cost:250000, req:{inf:5},  mult:{inf:2}},
     {id:'u5', name:'Оригинальный стек',    desc:'Оригинальный стек без костылей: +25% ко всему доходу навсегда.', cost:500000, global:1.25}
+  ],
+  contracts: {
+    firstOfferAt: 1000,
+    offerEvery: 75,
+    acceptWindow: 30,
+    duration: 60,
+    pressure: 1.25,
+    rewardRate: 0.4
+  },
+  managers: [
+    {id:'m_bpe',  for:'bpe',  name:'Архитектор BPE',        cost:1000},
+    {id:'m_attn', for:'attn', name:'Оркестратор Attention',  cost:8000},
+    {id:'m_gpu',  for:'gpu',  name:'Диспетчер инференса',    cost:90000},
+    {id:'m_inf',  for:'inf',  name:'Оператор Astra',         cost:1200000},
+    {id:'m_ver',  for:'ver',  name:'Verifier: авто-аудит',   cost:5000000}
   ]
 };
