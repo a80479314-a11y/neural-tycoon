@@ -18,10 +18,20 @@ function globalMult() {
 
 function formatNumber(num) {
   if (num < 1000) return Math.floor(num).toString();
-  if (num < 1e6) return (num / 1e3).toFixed(1) + ' тыс';
-  if (num < 1e9) return (num / 1e6).toFixed(1) + ' млн';
-  if (num < 1e12) return (num / 1e9).toFixed(1) + ' млрд';
-  return (num / 1e12).toFixed(1) + ' трлн';
+  if (num < 1e6) {
+    const val = num / 1e3;
+    return (Number.isInteger(val) ? val : val.toFixed(1)) + ' тыс';
+  }
+  if (num < 1e9) {
+    const val = num / 1e6;
+    return (Number.isInteger(val) ? val : val.toFixed(1)) + ' млн';
+  }
+  if (num < 1e12) {
+    const val = num / 1e9;
+    return (Number.isInteger(val) ? val : val.toFixed(1)) + ' млрд';
+  }
+  const val = num / 1e12;
+  return (Number.isInteger(val) ? val : val.toFixed(1)) + ' трлн';
 }
 
 function getIncome() {

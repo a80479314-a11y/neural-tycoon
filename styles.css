@@ -305,7 +305,7 @@ body {
   -webkit-backdrop-filter: blur(14px);
   box-shadow: -20px 0 60px rgba(124, 58, 237, 0.15);
   overflow-y: auto;
-  padding: 24px 20px;
+  padding: 100px 20px 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
