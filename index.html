@@ -27,8 +27,13 @@
 
     <!-- Header -->
     <header class="header">
-      <h1 class="header__title">Neural Tycoon</h1>
-      <p class="header__subtitle">Построй империю нейросетей — от перцептрона до сингулярности</p>
+      <div class="header__row">
+        <div>
+          <h1 class="header__title">Neural Tycoon</h1>
+          <p class="header__subtitle">Построй империю нейросетей — от перцептрона до сингулярности</p>
+        </div>
+        <button class="btn-research" id="research-open">Исследования</button>
+      </div>
     </header>
 
     <!-- Quests Bar -->
@@ -47,6 +52,10 @@
       <div class="hud__chip">
         <span class="hud__chip-label">Ключи</span>
         <span class="hud__chip-value" data-hud="keys">0</span>
+      </div>
+      <div class="hud__chip">
+        <span class="hud__chip-label">Наука</span>
+        <span class="hud__chip-value" data-hud="science">0</span>
       </div>
     </div>
 
@@ -89,6 +98,15 @@
 
   <!-- Reset Button -->
   <button class="btn-reset">сброс</button>
+
+  <!-- Research Overlay -->
+  <div class="research-overlay" id="research-overlay" style="display:none">
+    <div class="research__header">
+      <h2 class="research__title">Дерево технологий</h2>
+      <button class="research__close" id="research-close">✕</button>
+    </div>
+    <div class="research__content"></div>
+  </div>
 
   <script type="module" src="/src/main.tsx"></script>
 </body>

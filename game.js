@@ -15,13 +15,19 @@ const state = {
   // Менеджеры
   managers: {},
   // Квесты
-  questIndex: 0
+  questIndex: 0,
+  // Наука
+  science: 0,
+  scienceLifetime: 0,
+  // Технологии
+  tech: {}
 };
 
 // Инициализация owned и purchased
 CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
 CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
 CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
+CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
 
 // Единая функция множителей
 function getMultipliers() {
@@ -38,6 +44,17 @@ function getMultipliers() {
       });
     }
     if (u.global) globalMult *= u.global;
+  });
+  
+  // Технологии
+  CONFIG.tech.forEach(t => {
+    if (!state.tech[t.id]) return;
+    if (t.mult) {
+      Object.keys(t.mult).forEach(bid => {
+        buildingMult[bid] *= t.mult[bid];
+      });
+    }
+    if (t.global) globalMult *= t.global;
   });
   
   // Дебафф серого шлюза
@@ -88,10 +105,12 @@ function updateHUD() {
   const balanceEl = document.querySelector('[data-hud="balance"]');
   const incomeEl = document.querySelector('[data-hud="income"]');
   const keysEl = document.querySelector('[data-hud="keys"]');
+  const scienceEl = document.querySelector('[data-hud="science"]');
   
   if (balanceEl) balanceEl.textContent = formatNumber(state.money);
   if (incomeEl) incomeEl.textContent = '+' + formatNumber(getIncome()) + '/s';
   if (keysEl) keysEl.textContent = state.keys.toString();
+  if (scienceEl) scienceEl.textContent = formatNumber(state.science);
 }
 
 // Рендер магазина (ОДИН раз)
@@ -259,6 +278,12 @@ setInterval(() => {
   const earned = income * dt;
   state.money += earned;
   state.lifetime += earned;
+  
+  // Наука
+  const scienceEarned = getScienceIncome() * dt;
+  state.science += scienceEarned;
+  state.scienceLifetime += scienceEarned;
+  
   updateHUD();
   updateShop();
   updateUpgrades();
@@ -376,6 +401,8 @@ function updateContractActive() {
   // Проверяем успех
   if (contract.progress >= contract.target) {
     state.money += contract.reward;
+    state.science += 5;
+    state.scienceLifetime += 5;
     state.contractsDone++;
     showToast(`Контракт выполнен: +${formatNumber(contract.reward)}`, 'success');
     state.contractActive = null;
@@ -1051,6 +1078,135 @@ function renderQuests() {
   }
 }
 
+// ========== Наука и Исследования ==========
+function getScienceIncome() {
+  return (state.owned.ver || 0) * 1.0 + (state.owned.inf || 0) * 0.2;
+}
+
+function isTechAvailable(techId) {
+  const tech = CONFIG.tech.find(t => t.id === techId);
+  if (!tech) return false;
+  return tech.req.every(parentId => state.tech[parentId]);
+}
+
+function isTechPurchased(techId) {
+  return state.tech[techId];
+}
+
+function buyTech(techId) {
+  const tech = CONFIG.tech.find(t => t.id === techId);
+  if (!tech) return;
+  if (state.tech[techId]) return;
+  if (!isTechAvailable(techId)) return;
+  if (state.science < tech.cost) return;
+  
+  state.science -= tech.cost;
+  state.tech[techId] = true;
+  renderResearchOverlay();
+  updateHUD();
+}
+
+function renderResearchOverlay() {
+  const overlay = document.getElementById('research-overlay');
+  if (!overlay) return;
+  
+  const content = overlay.querySelector('.research__content');
+  if (!content) return;
+  
+  content.innerHTML = '';
+  
+  // SVG для линий
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'research__lines');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.position = 'absolute';
+  svg.style.top = '0';
+  svg.style.left = '0';
+  svg.style.pointerEvents = 'none';
+  content.appendChild(svg);
+  
+  // Позиции узлов (ручная раскладка дерева)
+  const positions = {
+    'r1': { x: 25, y: 15 },
+    'r2': { x: 75, y: 15 },
+    'c1': { x: 25, y: 35 },
+    'c3': { x: 75, y: 35 },
+    'c2': { x: 25, y: 55 },
+    'c4': { x: 75, y: 55 },
+    'f1': { x: 50, y: 75 }
+  };
+  
+  // Рисуем линии
+  CONFIG.tech.forEach(tech => {
+    const pos = positions[tech.id];
+    if (!pos) return;
+    
+    tech.req.forEach(parentId => {
+      const parentPos = positions[parentId];
+      if (!parentPos) return;
+      
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', parentPos.x + '%');
+      line.setAttribute('y1', parentPos.y + '%');
+      line.setAttribute('x2', pos.x + '%');
+      line.setAttribute('y2', pos.y + '%');
+      line.setAttribute('stroke', 'rgba(190, 120, 255, 0.4)');
+      line.setAttribute('stroke-width', '2');
+      svg.appendChild(line);
+    });
+  });
+  
+  // Рисуем узлы
+  CONFIG.tech.forEach(tech => {
+    const pos = positions[tech.id];
+    if (!pos) return;
+    
+    const node = document.createElement('div');
+    node.className = 'research__node';
+    
+    const purchased = isTechPurchased(tech.id);
+    const available = isTechAvailable(tech.id);
+    const canAfford = state.science >= tech.cost;
+    
+    if (purchased) {
+      node.classList.add('research__node--purchased');
+    } else if (available && canAfford) {
+      node.classList.add('research__node--available');
+    } else {
+      node.classList.add('research__node--locked');
+    }
+    
+    node.style.left = pos.x + '%';
+    node.style.top = pos.y + '%';
+    
+    node.innerHTML = `
+      <div class="research__node-name">${tech.name}</div>
+      <div class="research__node-cost">${tech.cost} 🔬</div>
+      <div class="research__node-desc">${tech.desc}</div>
+    `;
+    
+    if (available && !purchased && canAfford) {
+      node.addEventListener('click', () => buyTech(tech.id));
+    }
+    
+    content.appendChild(node);
+  });
+}
+
+function openResearchOverlay() {
+  const overlay = document.getElementById('research-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  renderResearchOverlay();
+}
+
+function closeResearchOverlay() {
+  const overlay = document.getElementById('research-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'none';
+}
+
 // Инициализация после загрузки DOM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
@@ -1060,6 +1216,17 @@ if (document.readyState === 'loading') {
     renderUpgrades();
     renderManagers();
     renderQuests();
+    
+    // Обработчики оверлея
+    const openBtn = document.getElementById('research-open');
+    if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
+    
+    const closeBtn = document.getElementById('research-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeResearchOverlay();
+    });
   });
 } else {
   initCanvas();
@@ -1068,6 +1235,16 @@ if (document.readyState === 'loading') {
   renderUpgrades();
   renderManagers();
   renderQuests();
+  
+  const openBtn = document.getElementById('research-open');
+  if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
+  
+  const closeBtn = document.getElementById('research-close');
+  if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeResearchOverlay();
+  });
 }
 
 // ========== Система событий ==========

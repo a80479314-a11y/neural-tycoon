@@ -30,6 +30,15 @@ export const CONFIG = {
     {id:'m_inf',  for:'inf',  name:'Оператор Astra',         cost:1200000},
     {id:'m_ver',  for:'ver',  name:'Verifier: авто-аудит',   cost:5000000}
   ],
+  tech: [
+    {id:'r1', name:'Кэш токенов',        desc:'+25% к доходу Токенизации (BPE).',      cost:40,   req:[],        mult:{bpe:1.25}},
+    {id:'r2', name:'Параллельные ветви', desc:'+25% к доходу Матриц Attention.',       cost:40,   req:[],        mult:{attn:1.25}},
+    {id:'c1', name:'KV-кэш',             desc:'+25% к доходу Вероятностного инференса.',cost:120,  req:['r1'],    mult:{gpu:1.25}},
+    {id:'c2', name:'Дистилляция',        desc:'+25% к доходу Флагмана Astra.',         cost:300,  req:['c1'],    mult:{inf:1.25}},
+    {id:'c3', name:'Разреженное внимание',desc:'Ещё +25% к доходу Матриц Attention.',  cost:120,  req:['r2'],    mult:{attn:1.25}},
+    {id:'c4', name:'Роутер MoE',         desc:'+10% ко всему доходу.',                 cost:400,  req:['c3'],    global:1.10},
+    {id:'f1', name:'Ядро сингулярности', desc:'+25% ко всему доходу. Финал ветки.',    cost:1500, req:['c2','c4'],global:1.25}
+  ],
   quests: [
     {id:'q1', text:'Запусти токенизацию: купи 1 BPE',        goal:{type:'own', id:'bpe', n:1},       reward:50},
     {id:'q2', text:'Нарасти нарезку: 5 BPE',                  goal:{type:'own', id:'bpe', n:5},       reward:200},
