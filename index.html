@@ -57,7 +57,14 @@
         <span class="hud__chip-label">Наука</span>
         <span class="hud__chip-value" data-hud="science">0</span>
       </div>
+      <div class="rank-badge" id="rank-badge">
+        <div class="rank-badge__diamond">
+          <span class="rank-badge__value">0</span>
+        </div>
+        <div class="rank-badge__label">РАНГ</div>
+      </div>
     </div>
+    <div class="rank-rewards-line" id="rank-rewards-line">НАГРАДЫ ЗА РАНГ: Награда контрактов +10% (ранг 1)</div>
 
     <!-- Center Stage — Isometric Map Canvas -->
     <main class="stage">
@@ -108,6 +115,23 @@
     <div class="research__status" id="research-status"></div>
     <div class="research__hint">Наука приходит из контрактов и квестов</div>
     <div class="research__content"></div>
+  </div>
+
+  <!-- Prestige Pill -->
+  <button class="prestige-pill" id="prestige-pill" style="display:none">⚡ ОРИГИНАЛЬНЫЙ СТЕК</button>
+
+  <!-- Prestige Modal -->
+  <div class="prestige-modal" id="prestige-modal" style="display:none">
+    <div class="prestige-modal__content">
+      <h2 class="prestige-modal__title">ПЕРЕЙТИ НА ОРИГИНАЛЬНЫЙ СТЕК</h2>
+      <p class="prestige-modal__desc">Сброс прогресса в обмен на GWARP-ключи и ранг</p>
+      <div class="prestige__rewards"></div>
+      <div class="prestige-modal__warning">Здания, апгрейды, менеджеры и контракты будут сброшены. Квесты, технологии, наука, ключи и ранг сохранятся.</div>
+      <div class="prestige-modal__buttons">
+        <button class="prestige-modal__btn prestige-modal__btn--confirm" id="prestige-confirm">ПОДТВЕРДИТЬ</button>
+        <button class="prestige-modal__btn prestige-modal__btn--cancel" id="prestige-cancel">ОТМЕНА</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="/src/main.tsx"></script>

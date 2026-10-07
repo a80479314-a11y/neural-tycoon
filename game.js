@@ -20,7 +20,10 @@ const state = {
   science: 0,
   scienceLifetime: 0,
   // Технологии
-  tech: {}
+  tech: {},
+  // Престиж
+  prestiges: 0,
+  get rank() { return this.prestiges; }
 };
 
 // Инициализация owned и purchased
@@ -28,6 +31,41 @@ CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
 CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
 CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
 CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
+
+// Получить стартовый капитал из ранг-наград
+function getStartingMoney() {
+  let startMoney = 20;
+  CONFIG.rankRewards.forEach(r => {
+    if (state.rank >= r.rank) {
+      if (r.rank === 3) startMoney = 100;
+      if (r.rank === 5) startMoney = 500;
+    }
+  });
+  return startMoney;
+}
+
+// Получить множитель награды контрактов из ранг-наград
+function getContractRewardMult() {
+  let mult = 1;
+  CONFIG.rankRewards.forEach(r => {
+    if (state.rank >= r.rank) {
+      if (r.rank === 1) mult *= 1.10;
+      if (r.rank === 5) mult *= 1.25;
+    }
+  });
+  return mult;
+}
+
+// Получить множитель дохода науки из ранг-наград
+function getScienceIncomeMult() {
+  let mult = 1;
+  CONFIG.rankRewards.forEach(r => {
+    if (state.rank >= r.rank) {
+      if (r.rank === 2) mult *= 1.25;
+    }
+  });
+  return mult;
+}
 
 // Единая функция множителей
 function getMultipliers() {
@@ -292,6 +330,7 @@ setInterval(() => {
   tryOfferContract();
   completeQuest();
   renderQuests();
+  updatePrestigeButton();
 }, 100);
 
 // Тик менеджеров (5s)
@@ -400,11 +439,12 @@ function updateContractActive() {
   
   // Проверяем успех
   if (contract.progress >= contract.target) {
-    state.money += contract.reward;
+    const finalReward = Math.ceil(contract.reward * getContractRewardMult());
+    state.money += finalReward;
     state.science += 5;
     state.scienceLifetime += 5;
     state.contractsDone++;
-    showToast(`Контракт выполнен: +${formatNumber(contract.reward)}`, 'success');
+    showToast(`Контракт выполнен: +${formatNumber(finalReward)}`, 'success');
     state.contractActive = null;
     const contractsEl = document.getElementById('contracts');
     if (contractsEl) contractsEl.innerHTML = '';
@@ -1084,9 +1124,131 @@ function renderQuests() {
   }
 }
 
+// ========== Престиж ==========
+function getPrestigeKeys() {
+  if (state.lifetime < 1e6) return 0;
+  return Math.floor(Math.sqrt(state.lifetime / 1e6));
+}
+
+function getNextRankReward() {
+  const next = CONFIG.rankRewards.find(r => r.rank > state.rank);
+  return next || null;
+}
+
+function updatePrestigeButton() {
+  const pill = document.getElementById('prestige-pill');
+  if (!pill) return;
+  
+  const keys = getPrestigeKeys();
+  if (keys > 0) {
+    pill.style.display = 'inline-block';
+    pill.textContent = `⚡ ОРИГИНАЛЬНЫЙ СТЕК: +${keys} GWARP-ключей`;
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+function openPrestigeModal() {
+  const modal = document.getElementById('prestige-modal');
+  if (!modal) return;
+  
+  const keys = getPrestigeKeys();
+  const newRank = state.rank + 1;
+  const nextReward = CONFIG.rankRewards.find(r => r.rank === newRank);
+  
+  const rewardsList = modal.querySelector('.prestige__rewards');
+  if (rewardsList) {
+    rewardsList.innerHTML = `
+      <div class="prestige__reward-item">+${keys} GWARP-ключей (+${keys * 10}% к доходу)</div>
+      <div class="prestige__reward-item">Ранг станет: <strong>${newRank}</strong></div>
+      ${nextReward ? `<div class="prestige__reward-item">Награда ранга ${newRank}: ${nextReward.desc}</div>` : '<div class="prestige__reward-item prestige__reward-item--muted">Новых наград ранга нет</div>'}
+    `;
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closePrestigeModal() {
+  const modal = document.getElementById('prestige-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+function confirmPrestige() {
+  const keys = getPrestigeKeys();
+  if (keys <= 0) return;
+  
+  // Сохраняем
+  const savedKeys = state.keys + keys;
+  const savedPrestiges = state.prestiges + 1;
+  const savedQuestIndex = state.questIndex;
+  const savedTech = { ...state.tech };
+  const savedScience = state.science;
+  const savedScienceLifetime = state.scienceLifetime;
+  const savedContractsDone = state.contractsDone;
+  
+  // Сброс
+  state.money = getStartingMoney();
+  state.lifetime = 0;
+  state.owned = {};
+  CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
+  state.purchased = {};
+  CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
+  state.managers = {};
+  CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
+  state.contractOffer = null;
+  state.contractActive = null;
+  state.lastOfferTime = 0;
+  state.debuffUntil = 0;
+  
+  // Восстанавливаем
+  state.keys = savedKeys;
+  state.prestiges = savedPrestiges;
+  state.questIndex = savedQuestIndex;
+  state.tech = savedTech;
+  state.science = savedScience;
+  state.scienceLifetime = savedScienceLifetime;
+  state.contractsDone = savedContractsDone;
+  
+  // Обновляем UI
+  updateHUD();
+  updateShop();
+  updateUpgrades();
+  updateManagers();
+  renderQuests();
+  updatePrestigeButton();
+  updateRankBadge();
+  
+  // Очищаем контракты
+  const contractsEl = document.getElementById('contracts');
+  if (contractsEl) contractsEl.innerHTML = '';
+  
+  closePrestigeModal();
+  showToast(`Оригинальный стек: +${keys} ключей, ранг ${state.rank}`, 'success');
+}
+
+function updateRankBadge() {
+  const badge = document.getElementById('rank-badge');
+  if (!badge) return;
+  
+  const rankValue = badge.querySelector('.rank-badge__value');
+  if (rankValue) rankValue.textContent = state.rank;
+  
+  const nextRewardEl = document.getElementById('rank-rewards-line');
+  if (nextRewardEl) {
+    const next = getNextRankReward();
+    if (next) {
+      nextRewardEl.textContent = `НАГРАДЫ ЗА РАНГ: ${next.desc} (ранг ${next.rank})`;
+    } else {
+      nextRewardEl.textContent = 'НАГРАДЫ ЗА РАНГ: все получены';
+    }
+  }
+}
+
 // ========== Наука и Исследования ==========
 function getScienceIncome() {
-  return (state.owned.ver || 0) * 1.0 + (state.owned.inf || 0) * 0.2;
+  const base = (state.owned.ver || 0) * 1.0 + (state.owned.inf || 0) * 0.2;
+  return base * getScienceIncomeMult();
 }
 
 function isTechAvailable(techId) {
@@ -1264,6 +1426,8 @@ if (document.readyState === 'loading') {
     renderUpgrades();
     renderManagers();
     renderQuests();
+    updateRankBadge();
+    updatePrestigeButton();
     
     // Обработчики оверлея
     const openBtn = document.getElementById('research-open');
@@ -1272,8 +1436,21 @@ if (document.readyState === 'loading') {
     const closeBtn = document.getElementById('research-close');
     if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
     
+    // Обработчики престижа
+    const prestigePill = document.getElementById('prestige-pill');
+    if (prestigePill) prestigePill.addEventListener('click', openPrestigeModal);
+    
+    const prestigeConfirm = document.getElementById('prestige-confirm');
+    if (prestigeConfirm) prestigeConfirm.addEventListener('click', confirmPrestige);
+    
+    const prestigeCancel = document.getElementById('prestige-cancel');
+    if (prestigeCancel) prestigeCancel.addEventListener('click', closePrestigeModal);
+    
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeResearchOverlay();
+      if (e.key === 'Escape') {
+        closeResearchOverlay();
+        closePrestigeModal();
+      }
     });
   });
 } else {
@@ -1283,6 +1460,8 @@ if (document.readyState === 'loading') {
   renderUpgrades();
   renderManagers();
   renderQuests();
+  updateRankBadge();
+  updatePrestigeButton();
   
   const openBtn = document.getElementById('research-open');
   if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
@@ -1290,8 +1469,20 @@ if (document.readyState === 'loading') {
   const closeBtn = document.getElementById('research-close');
   if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
   
+  const prestigePill = document.getElementById('prestige-pill');
+  if (prestigePill) prestigePill.addEventListener('click', openPrestigeModal);
+  
+  const prestigeConfirm = document.getElementById('prestige-confirm');
+  if (prestigeConfirm) prestigeConfirm.addEventListener('click', confirmPrestige);
+  
+  const prestigeCancel = document.getElementById('prestige-cancel');
+  if (prestigeCancel) prestigeCancel.addEventListener('click', closePrestigeModal);
+  
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeResearchOverlay();
+    if (e.key === 'Escape') {
+      closeResearchOverlay();
+      closePrestigeModal();
+    }
   });
 }
 

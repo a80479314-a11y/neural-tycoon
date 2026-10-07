@@ -30,6 +30,12 @@ export const CONFIG = {
     {id:'m_inf',  for:'inf',  name:'Оператор Astra',         cost:1200000},
     {id:'m_ver',  for:'ver',  name:'Verifier: авто-аудит',   cost:5000000}
   ],
+  rankRewards: [
+    {rank:1, desc:'Награда контрактов +10%'},
+    {rank:2, desc:'Доход науки +25%'},
+    {rank:3, desc:'Стартовый капитал 100'},
+    {rank:5, desc:'Награда контрактов +25% и стартовый капитал 500'}
+  ],
   tech: [
     {id:'r1', name:'Кэш токенов',        desc:'+25% к доходу Токенизации (BPE).',      cost:40,   req:[],        mult:{bpe:1.25}},
     {id:'r2', name:'Параллельные ветви', desc:'+25% к доходу Матриц Attention.',       cost:40,   req:[],        mult:{attn:1.25}},
