@@ -526,6 +526,7 @@ const ctx = canvas ? canvas.getContext('2d') : null;
 
 let canvasWidth = 600;
 let canvasHeight = 400;
+let canvasScale = 1;
 let hoveredTile = null;
 let animTime = 0;
 
@@ -558,8 +559,8 @@ const mapBuildings = []; // {type, tileIndex, count, i, j}
 
 // Изометрическая проекция
 function tileToScreen(i, j) {
-  const centerX = canvasWidth / 2;
-  const centerY = canvasHeight / 2 - 50;
+  const centerX = (canvasWidth / canvasScale) / 2;
+  const centerY = (canvasHeight / canvasScale) / 2 - 50;
   const x = centerX + (i - j) * TILE_W / 2;
   const y = centerY + (i + j) * TILE_H / 2;
   return { x, y };
@@ -567,10 +568,10 @@ function tileToScreen(i, j) {
 
 // Обратное преобразование (экран → тайл)
 function screenToTile(sx, sy) {
-  const centerX = canvasWidth / 2;
-  const centerY = canvasHeight / 2 - 50;
-  const dx = sx - centerX;
-  const dy = sy - centerY;
+  const centerX = (canvasWidth / canvasScale) / 2;
+  const centerY = (canvasHeight / canvasScale) / 2 - 50;
+  const dx = sx / canvasScale - centerX;
+  const dy = sy / canvasScale - centerY;
   const i = (dx / (TILE_W / 2) + dy / (TILE_H / 2)) / 2;
   const j = (dy / (TILE_H / 2) - dx / (TILE_W / 2)) / 2;
   return { i: Math.floor(i), j: Math.floor(j) };
@@ -583,13 +584,24 @@ function initCanvas() {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   
+  // Если контейнер имеет нулевой размер, пробуем позже
+  if (rect.width === 0 || rect.height === 0) {
+    setTimeout(initCanvas, 100);
+    return;
+  }
+  
   canvasWidth = rect.width;
   canvasHeight = rect.height;
+  
+  // Рассчитываем масштаб для вписывания карты
+  const fieldWidth = MAP_SIZE * TILE_W;
+  canvasScale = Math.min(1, canvasWidth / fieldWidth);
   
   canvas.width = canvasWidth * dpr;
   canvas.height = canvasHeight * dpr;
   
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // Сброс трансформации
+  ctx.scale(dpr * canvasScale, dpr * canvasScale);
 }
 
 // Отрисовка ромбовидного тайла
@@ -937,6 +949,11 @@ window.addEventListener('resize', () => {
   initCanvas();
 });
 
+// Orientation change handler
+window.addEventListener('orientationchange', () => {
+  setTimeout(initCanvas, 100);
+});
+
 // ========== Квесты ==========
 function getQuestProgress(quest) {
   const goal = quest.goal;
@@ -1031,13 +1048,24 @@ function renderQuests() {
   }
 }
 
-// Инициализация
-initCanvas();
-animate();
-renderShop();
-renderUpgrades();
-renderManagers();
-renderQuests();
+// Инициализация после загрузки DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initCanvas();
+    animate();
+    renderShop();
+    renderUpgrades();
+    renderManagers();
+    renderQuests();
+  });
+} else {
+  initCanvas();
+  animate();
+  renderShop();
+  renderUpgrades();
+  renderManagers();
+  renderQuests();
+}
 
 // ========== Система событий ==========
 let toastTimeout = null;

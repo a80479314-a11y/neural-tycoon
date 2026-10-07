@@ -212,6 +212,9 @@ body {
   display: flex;
   gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
+  padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .quest-slot {
@@ -332,12 +335,29 @@ body {
 }
 
 @media (max-width: 900px) {
+  .quests-bar {
+    left: 10px;
+    right: 10px;
+    top: 120px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0 10px;
+  }
+  
   .quest-slot--next {
     display: none;
   }
   
+  .quest-slot {
+    min-width: 140px;
+    max-width: 160px;
+    flex-shrink: 0;
+  }
+  
   .map-canvas {
-    width: 300px;
+    width: 100%;
+    max-width: 300px;
     height: 200px;
   }
 }
