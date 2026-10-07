@@ -805,6 +805,41 @@ body {
   width: 100%;
 }
 
+.research__status {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.research__status-label {
+  color: var(--muted);
+}
+
+.research__status-value {
+  color: var(--text);
+  -webkit-text-stroke: 1px rgba(233, 213, 255, 0.45);
+  color: transparent;
+}
+
+.research__status-income {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.research__hint {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 24px;
+  opacity: 0.7;
+}
+
 .research__node {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -819,33 +854,64 @@ body {
   max-width: 200px;
   text-align: center;
   transition: all 0.3s;
+  cursor: pointer;
+}
+
+.research__node:hover:not(.research__node--locked):not(.research__node--purchased) {
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 .research__node--purchased {
   border-color: var(--green);
   box-shadow: 0 0 25px rgba(70, 247, 154, 0.4);
+  cursor: default;
 }
 
 .research__node--available {
   border-color: var(--primary);
   box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
-  cursor: pointer;
   animation: nodePulse 2s ease-in-out infinite;
 }
 
 .research__node--available:hover {
-  transform: translate(-50%, -50%) scale(1.05);
   box-shadow: 0 0 35px rgba(168, 85, 247, 0.7);
+  border-color: var(--violet);
+}
+
+.research__node--unaffordable {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+  animation: nodePulse 2s ease-in-out infinite;
+}
+
+.research__node--unaffordable:hover {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
 }
 
 .research__node--locked {
-  opacity: 0.5;
+  opacity: 0.45;
   filter: grayscale(0.6);
+  cursor: not-allowed;
 }
 
 @keyframes nodePulse {
   0%, 100% { box-shadow: 0 0 25px rgba(168, 85, 247, 0.5); }
   50% { box-shadow: 0 0 35px rgba(168, 85, 247, 0.8); }
+}
+
+.research__node-status {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.research__node-lock {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
 }
 
 .research__node-name {
@@ -864,6 +930,19 @@ body {
   font-size: 0.85rem;
   color: var(--violet);
   margin-bottom: 6px;
+}
+
+.research__node-cost--unaffordable {
+  color: var(--muted);
+}
+
+.research__node-deficit {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  opacity: 0.8;
 }
 
 .research__node-desc {

@@ -1013,6 +1013,12 @@ function completeQuest() {
   if (!isQuestComplete(quest)) return;
   
   state.money += quest.reward;
+  
+  // +10% от награды наукой
+  const scienceReward = Math.floor(quest.reward * 0.1);
+  state.science += scienceReward;
+  state.scienceLifetime += scienceReward;
+  
   showToast(`Квест выполнен: +${formatNumber(quest.reward)}`, 'success');
   state.questIndex++;
   renderQuests();
@@ -1169,10 +1175,13 @@ function renderResearchOverlay() {
     const available = isTechAvailable(tech.id);
     const canAfford = state.science >= tech.cost;
     
+    // 4 состояния узла
     if (purchased) {
       node.classList.add('research__node--purchased');
     } else if (available && canAfford) {
       node.classList.add('research__node--available');
+    } else if (available && !canAfford) {
+      node.classList.add('research__node--unaffordable');
     } else {
       node.classList.add('research__node--locked');
     }
@@ -1180,14 +1189,45 @@ function renderResearchOverlay() {
     node.style.left = pos.x + '%';
     node.style.top = pos.y + '%';
     
+    // Контент узла в зависимости от состояния
+    let costHtml = '';
+    let statusHtml = '';
+    
+    if (purchased) {
+      statusHtml = '<div class="research__node-status">✓ ИЗУЧЕНО</div>';
+    } else if (available) {
+      if (canAfford) {
+        costHtml = `<div class="research__node-cost">${tech.cost} 🔬</div>`;
+      } else {
+        const deficit = tech.cost - Math.floor(state.science);
+        costHtml = `<div class="research__node-cost research__node-cost--unaffordable">${tech.cost} 🔬</div>`;
+        costHtml += `<div class="research__node-deficit">не хватает ${deficit}</div>`;
+      }
+    } else {
+      costHtml = `<div class="research__node-cost">${tech.cost} 🔬</div>`;
+      statusHtml = '<div class="research__node-lock">🔒</div>';
+    }
+    
     node.innerHTML = `
+      ${statusHtml}
       <div class="research__node-name">${tech.name}</div>
-      <div class="research__node-cost">${tech.cost} 🔬</div>
+      ${costHtml}
       <div class="research__node-desc">${tech.desc}</div>
     `;
     
-    if (available && !purchased && canAfford) {
+    // Обработчики кликов
+    if (purchased) {
+      // Куплен — клик игнорируется
+    } else if (available && canAfford) {
+      // Доступен и хватает — покупка
       node.addEventListener('click', () => buyTech(tech.id));
+    } else if (available && !canAfford) {
+      // Доступен, но не хватает — тост
+      node.addEventListener('click', () => {
+        showToast(`Недостаточно науки: есть ${formatNumber(state.science)} / нужно ${tech.cost}`, 'muted');
+      });
+    } else {
+      // Заблокирован — клик игнорируется
     }
     
     content.appendChild(node);
@@ -1198,6 +1238,14 @@ function openResearchOverlay() {
   const overlay = document.getElementById('research-overlay');
   if (!overlay) return;
   overlay.style.display = 'flex';
+  
+  // Обновляем строку состояния
+  const statusEl = document.getElementById('research-status');
+  if (statusEl) {
+    const scienceIncome = getScienceIncome();
+    statusEl.innerHTML = `<span class="research__status-label">Наука:</span> <span class="research__status-value">${formatNumber(state.science)}</span> <span class="research__status-income">(+${formatNumber(scienceIncome)}/с)</span>`;
+  }
+  
   renderResearchOverlay();
 }
 
