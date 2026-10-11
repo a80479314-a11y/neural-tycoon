@@ -2084,7 +2084,7 @@ if (document.readyState === 'loading') {
       const debugPanel = document.createElement('div'); // DEBUG_TOOL
       debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TOOL
       debugPanel.setAttribute('data-debug', 'panel'); // DEBUG_TOOL
-      debugPanel.innerHTML = ` // DEBUG_TOOL
+      debugPanel.innerHTML = `
         <div class="debug-panel__title">DBG</div>
         <div class="debug-panel__grid">
           <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addMoney(1000000)">+1M $</button>
@@ -2221,7 +2221,7 @@ if (document.readyState === 'loading') {
     const debugPanel = document.createElement('div'); // DEBUG_TOOL
     debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TOOL
     debugPanel.setAttribute('data-debug', 'panel'); // DEBUG_TOOL
-    debugPanel.innerHTML = ` // DEBUG_TOOL
+    debugPanel.innerHTML = `
       <div class="debug-panel__title">DBG</div>
       <div class="debug-panel__grid">
         <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addMoney(1000000)">+1M $</button>

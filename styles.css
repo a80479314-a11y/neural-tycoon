@@ -121,6 +121,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-width: calc(100vw - 400px);
 }
 
 .header__title {
@@ -144,12 +145,12 @@ body {
 .hud {
   position: fixed;
   top: 24px;
-  right: 40px;
+  right: 32px;
   z-index: 10;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  max-width: calc(100vw - 80px);
+  max-width: calc(100vw - 380px);
 }
 
 .hud__chip {
@@ -212,7 +213,7 @@ body {
   position: fixed;
   top: 140px;
   left: 40px;
-  right: 360px;
+  right: 340px;
   z-index: 15;
   display: flex;
   gap: 10px;
@@ -220,6 +221,7 @@ body {
   flex-wrap: wrap;
   padding: 0 10px;
   box-sizing: border-box;
+  max-width: calc(100vw - 380px);
 }
 
 .quest-slot {
