@@ -888,7 +888,7 @@ function initCanvas() {
 }
 
 // Отрисовка ромбовидного тайла
-function drawTile(i, j, highlight = false) {
+function drawTile(i, j, highlight = false, hasBuilding = false) {
   const { x, y } = tileToScreen(i, j);
   
   ctx.beginPath();
@@ -898,13 +898,21 @@ function drawTile(i, j, highlight = false) {
   ctx.lineTo(x - TILE_W / 2, y);
   ctx.closePath();
   
-  if (highlight) {
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+  // Заливка для тайлов под зданиями
+  if (hasBuilding) {
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.12)';
     ctx.fill();
   }
   
-  ctx.strokeStyle = 'rgba(190, 120, 255, 0.35)';
-  ctx.lineWidth = 1;
+  // Подсветка при hover
+  if (highlight) {
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
+    ctx.fill();
+  }
+  
+  // Контур ярче для тайлов под зданиями
+  ctx.strokeStyle = hasBuilding ? 'rgba(190, 120, 255, 0.6)' : 'rgba(190, 120, 255, 0.35)';
+  ctx.lineWidth = hasBuilding ? 1.5 : 1;
   ctx.stroke();
 }
 
@@ -996,120 +1004,216 @@ function drawCore() {
   ctx.restore();
 }
 
-// Отрисовка зданий
+// Ауры типов зданий
+const BUILDING_AURAS = {
+  bpe: '#a855f7',
+  attn: '#c084fc',
+  gpu: '#8b5cf6',
+  inf: '#e9d5ff',
+  ver: '#46f79a'
+};
+
+// Отрисовка ауры под зданием
+function drawBuildingAura(building) {
+  const { x, y } = tileToScreen(building.i, building.j);
+  const color = BUILDING_AURAS[building.type];
+  if (!color) return;
+  
+  ctx.save();
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
+  gradient.addColorStop(0, color + '26'); // alpha 0.15
+  gradient.addColorStop(1, color + '00');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, 30, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// Отрисовка зданий с узнаваемыми силуэтами
 function drawBuilding(building) {
   const { x, y } = tileToScreen(building.i, building.j);
   const pulse = Math.sin(animTime * 3 + building.tileIndex) * 0.1 + 1;
   
+  // Аура
+  drawBuildingAura(building);
+  
   ctx.save();
   
   switch (building.type) {
-    case 'bpe': // Пульсирующая сфера на ножке
+    case 'bpe': // Сканер-ворота с пульсирующими токенами
       ctx.shadowBlur = 20;
       ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
       
-      // Ножка
-      ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y - 20);
-      ctx.stroke();
-      
-      // Сфера
-      const radius = 10 * pulse;
-      ctx.fillStyle = 'rgba(168, 85, 247, 0.7)';
-      ctx.beginPath();
-      ctx.arc(x, y - 25, radius, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-      
-    case 'attn': // Сфера с линиями к соседям
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
-      
-      // Линии к соседним тайлам
-      ctx.strokeStyle = 'rgba(192, 132, 252, 0.4)';
-      ctx.lineWidth = 1.5;
-      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-      directions.forEach(([di, dj]) => {
-        const ni = building.i + di;
-        const nj = building.j + dj;
-        if (ni >= 0 && ni < MAP_SIZE && nj >= 0 && nj < MAP_SIZE) {
-          const { x: nx, y: ny } = tileToScreen(ni, nj);
-          ctx.beginPath();
-          ctx.moveTo(x, y - 25);
-          ctx.lineTo(nx, ny);
-          ctx.stroke();
-        }
-      });
-      
-      // Сфера
-      ctx.fillStyle = 'rgba(192, 132, 252, 0.7)';
-      ctx.beginPath();
-      ctx.arc(x, y - 25, 12, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-      
-    case 'gpu': // Пирамида
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
-      ctx.fillStyle = 'rgba(192, 132, 252, 0.6)';
+      // Вертикальная пластина со щелью
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.5)';
       ctx.strokeStyle = 'rgba(216, 180, 254, 0.8)';
       ctx.lineWidth = 1.5;
       
-      ctx.beginPath();
-      ctx.moveTo(x, y - 40);
-      ctx.lineTo(x + 15, y);
-      ctx.lineTo(x - 15, y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      // Левая пластина
+      ctx.fillRect(x - 12, y - 35, 4, 35);
+      ctx.strokeRect(x - 12, y - 35, 4, 35);
+      
+      // Правая пластина
+      ctx.fillRect(x + 8, y - 35, 4, 35);
+      ctx.strokeRect(x + 8, y - 35, 4, 35);
+      
+      // Пульсирующие токены в щели
+      const tokenCount = 3;
+      for (let i = 0; i < tokenCount; i++) {
+        const offset = (animTime * 2 + i * 0.3) % 1;
+        const tokenY = y - 35 + offset * 35;
+        const tokenAlpha = Math.sin(offset * Math.PI) * 0.8;
+        ctx.fillStyle = `rgba(233, 213, 255, ${tokenAlpha})`;
+        ctx.beginPath();
+        ctx.arc(x, tokenY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       break;
       
-    case 'inf': // Обелиск с молнией
+    case 'attn': // Узел с орбитами
       ctx.shadowBlur = 20;
-      ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
-      ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
-      ctx.strokeStyle = 'rgba(192, 132, 252, 0.8)';
+      ctx.shadowColor = 'rgba(192, 132, 252, 0.8)';
+      
+      // Центральный узел
+      ctx.fillStyle = 'rgba(192, 132, 252, 0.8)';
+      ctx.beginPath();
+      ctx.arc(x, y - 20, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Орбиты с точками
+      const orbitCount = 4;
+      for (let i = 0; i < orbitCount; i++) {
+        const angle = (animTime * 0.5 + i * Math.PI / 2) % (Math.PI * 2);
+        const orbitRadius = 18;
+        const pointX = x + Math.cos(angle) * orbitRadius;
+        const pointY = y - 20 + Math.sin(angle) * orbitRadius * 0.6;
+        
+        // Линия-орбита
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 20);
+        ctx.lineTo(pointX, pointY);
+        ctx.stroke();
+        
+        // Точка на орбите
+        ctx.fillStyle = 'rgba(233, 213, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(pointX, pointY, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+      
+    case 'gpu': // Пирамида вероятностей
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(139, 92, 246, 0.8)';
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.6)';
+      ctx.strokeStyle = 'rgba(216, 180, 254, 0.8)';
       ctx.lineWidth = 1.5;
       
-      // Обелиск
+      // Пирамида
       ctx.beginPath();
-      ctx.moveTo(x, y - 50);
-      ctx.lineTo(x + 10, y - 40);
-      ctx.lineTo(x + 10, y);
-      ctx.lineTo(x - 10, y);
-      ctx.lineTo(x - 10, y - 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      
-      // Молния
-      const lightningOpacity = Math.sin(animTime * 5) * 0.5 + 0.5;
-      ctx.strokeStyle = `rgba(192, 132, 252, ${lightningOpacity})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x, y - 50);
-      ctx.lineTo(x - 3, y - 55);
-      ctx.lineTo(x + 2, y - 60);
-      ctx.stroke();
-      break;
-      
-    case 'ver': // Купол-щит
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = 'rgba(70, 247, 154, 0.8)';
-      ctx.fillStyle = 'rgba(70, 247, 154, 0.3)';
-      ctx.strokeStyle = 'rgba(70, 247, 154, 0.8)';
-      ctx.lineWidth = 2;
-      
-      ctx.beginPath();
-      ctx.arc(x, y - 15, 18, Math.PI, 0);
+      ctx.moveTo(x, y - 45);
       ctx.lineTo(x + 18, y);
       ctx.lineTo(x - 18, y);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      
+      // Пульсирующая вершина
+      const vertexPulse = Math.sin(animTime * 4) * 0.3 + 0.7;
+      ctx.fillStyle = `rgba(233, 213, 255, ${vertexPulse})`;
+      ctx.beginPath();
+      ctx.arc(x, y - 45, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Горизонтальные штрихи-ступени
+      ctx.strokeStyle = 'rgba(233, 213, 255, 0.6)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        const stepY = y - i * 10;
+        const stepWidth = (i / 4) * 18;
+        ctx.beginPath();
+        ctx.moveTo(x - stepWidth, stepY);
+        ctx.lineTo(x + stepWidth, stepY);
+        ctx.stroke();
+      }
+      break;
+      
+    case 'inf': // Обелиск с молнией и лучом
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.6)';
+      ctx.strokeStyle = 'rgba(233, 213, 255, 0.8)';
+      ctx.lineWidth = 1.5;
+      
+      // Обелиск
+      ctx.beginPath();
+      ctx.moveTo(x, y - 55);
+      ctx.lineTo(x + 10, y - 45);
+      ctx.lineTo(x + 10, y);
+      ctx.lineTo(x - 10, y);
+      ctx.lineTo(x - 10, y - 45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Символ молнии
+      const lightningOpacity = Math.sin(animTime * 5) * 0.5 + 0.5;
+      ctx.strokeStyle = `rgba(233, 213, 255, ${lightningOpacity})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 3, y - 35);
+      ctx.lineTo(x + 2, y - 30);
+      ctx.lineTo(x - 2, y - 25);
+      ctx.lineTo(x + 3, y - 20);
+      ctx.stroke();
+      
+      // Тонкий луч вверх
+      ctx.strokeStyle = `rgba(233, 213, 255, ${lightningOpacity * 0.6})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 55);
+      ctx.lineTo(x, y - 70);
+      ctx.stroke();
+      break;
+      
+    case 'ver': // Купол-щит с зелёной вспышкой
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = 'rgba(70, 247, 154, 0.8)';
+      
+      // Купол
+      ctx.fillStyle = 'rgba(70, 247, 154, 0.3)';
+      ctx.strokeStyle = 'rgba(70, 247, 154, 0.8)';
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      ctx.arc(x, y - 15, 20, Math.PI, 0);
+      ctx.lineTo(x + 20, y);
+      ctx.lineTo(x - 20, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Дуга-щит
+      ctx.strokeStyle = 'rgba(70, 247, 154, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y - 15, 25, Math.PI * 1.2, Math.PI * 1.8);
+      ctx.stroke();
+      
+      // Редкая зелёная вспышка-галочка
+      const checkOpacity = Math.sin(animTime * 2) > 0.8 ? 1 : 0;
+      if (checkOpacity > 0) {
+        ctx.strokeStyle = `rgba(70, 247, 154, ${checkOpacity})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(x - 6, y - 15);
+        ctx.lineTo(x - 2, y - 10);
+        ctx.lineTo(x + 6, y - 20);
+        ctx.stroke();
+      }
       break;
   }
   
@@ -1134,9 +1238,84 @@ function drawBuilding(building) {
   ctx.restore();
 }
 
+// Система пульсов для линий-связей
+const MAX_PULSES = 50; // Лимит для 60fps
+const pulses = [];
+
+function spawnPulse(building) {
+  if (pulses.length >= MAX_PULSES) return;
+  
+  const { x: startX, y: startY } = tileToScreen(building.i, building.j);
+  const center = Math.floor(MAP_SIZE / 2);
+  const { x: endX, y: endY } = tileToScreen(center, center);
+  
+  pulses.push({
+    startX, startY,
+    endX, endY,
+    progress: 0,
+    speed: 0.01 + Math.random() * 0.005, // Разная скорость для разнообразия
+    color: BUILDING_AURAS[building.type] || '#a855f7'
+  });
+}
+
+function updatePulses() {
+  // Обновляем прогресс и удаляем завершённые
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    pulses[i].progress += pulses[i].speed;
+    if (pulses[i].progress >= 1) {
+      pulses.splice(i, 1);
+    }
+  }
+  
+  // Генерируем новые пульсы раз в 1.5-2с для каждого здания
+  if (Math.random() < 0.02) { // ~60fps * 0.02 = ~1.2с
+    mapBuildings.forEach(building => {
+      if (Math.random() < 0.3) { // 30% шанс для каждого здания
+        spawnPulse(building);
+      }
+    });
+  }
+}
+
+function drawPulses() {
+  const center = Math.floor(MAP_SIZE / 2);
+  const { x: coreX, y: coreY } = tileToScreen(center, center);
+  
+  pulses.forEach(pulse => {
+    // Линия от здания к ядру
+    ctx.strokeStyle = 'rgba(190, 120, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pulse.startX, pulse.startY - 20); // От верхушки здания
+    ctx.lineTo(coreX, coreY);
+    ctx.stroke();
+    
+    // Пульс-точка
+    const currentX = pulse.startX + (coreX - pulse.startX) * pulse.progress;
+    const currentY = (pulse.startY - 20) + (coreY - (pulse.startY - 20)) * pulse.progress;
+    
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = pulse.color;
+    ctx.fillStyle = pulse.color;
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// Проверка, находится ли тайл под зданием
+function isTileUnderBuilding(i, j) {
+  return mapBuildings.some(b => b.i === i && b.j === j);
+}
+
 // Основной цикл отрисовки
 function renderMap() {
   if (!ctx) return;
+  
+  // Обновляем пульсы
+  updatePulses();
   
   // Очистка (в логических координатах до масштабирования)
   ctx.save();
@@ -1170,13 +1349,17 @@ function renderMap() {
   objects.forEach(obj => {
     if (obj.type === 'tile') {
       const isHovered = hoveredTile && hoveredTile.i === obj.i && hoveredTile.j === obj.j;
-      drawTile(obj.i, obj.j, isHovered);
+      const hasBuilding = isTileUnderBuilding(obj.i, obj.j);
+      drawTile(obj.i, obj.j, isHovered, hasBuilding);
     } else if (obj.type === 'core') {
       drawCore();
     } else if (obj.type === 'building') {
       drawBuilding(obj.building);
     }
   });
+  
+  // Отрисовка пульсов поверх всего
+  drawPulses();
 }
 
 // Размещение здания на карте
@@ -1202,12 +1385,63 @@ function placeBuildingOnMap(buildingId) {
   mapBuildings.push({ type: buildingId, tileIndex, count: 1, i, j });
 }
 
+// Система тултипов
+let hoveredBuilding = null;
+let touchTimer = null;
+
+function getBuildingAtPosition(mx, my) {
+  // Проверяем, находится ли курсор над зданием
+  for (const building of mapBuildings) {
+    const { x, y } = tileToScreen(building.i, building.j);
+    const distance = Math.sqrt((mx - x) ** 2 + (my - (y - 20)) ** 2);
+    if (distance < 25) { // Радиус здания ~20-25px
+      return building;
+    }
+  }
+  return null;
+}
+
+function showBuildingTooltip(building, clientX, clientY) {
+  const tooltip = document.getElementById('building-tooltip');
+  if (!tooltip) return;
+  
+  const buildingConfig = CONFIG.buildings.find(b => b.id === building.type);
+  if (!buildingConfig) return;
+  
+  const { buildingMult } = getMultipliers();
+  const incomePerUnit = buildingConfig.rate * (buildingMult[building.type] || 1);
+  const totalIncome = incomePerUnit * building.count;
+  
+  tooltip.innerHTML = `
+    <div class="building-tooltip__name">${buildingConfig.name}</div>
+    <div class="building-tooltip__info">
+      Кол-во: <strong>${building.count}</strong><br>
+      Доход: <strong>+${formatNumber(totalIncome)}/с</strong>
+    </div>
+  `;
+  
+  // Позиционируем тултип рядом с курсором
+  const stage = document.querySelector('.stage');
+  const stageRect = stage.getBoundingClientRect();
+  
+  tooltip.style.display = 'block';
+  tooltip.style.left = (clientX - stageRect.left + 20) + 'px';
+  tooltip.style.top = (clientY - stageRect.top - 20) + 'px';
+}
+
+function hideBuildingTooltip() {
+  const tooltip = document.getElementById('building-tooltip');
+  if (tooltip) {
+    tooltip.style.display = 'none';
+  }
+}
+
 // Hover обработка
 if (canvas) {
   canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const mx = (e.clientX - rect.left) / canvasScale;
+    const my = (e.clientY - rect.top) / canvasScale;
     
     const tile = screenToTile(mx, my);
     
@@ -1216,10 +1450,56 @@ if (canvas) {
     } else {
       hoveredTile = null;
     }
+    
+    // Проверяем hover над зданием
+    const building = getBuildingAtPosition(mx, my);
+    if (building) {
+      hoveredBuilding = building;
+      showBuildingTooltip(building, e.clientX, e.clientY);
+    } else {
+      hoveredBuilding = null;
+      hideBuildingTooltip();
+    }
   });
   
   canvas.addEventListener('mouseleave', () => {
     hoveredTile = null;
+    hoveredBuilding = null;
+    hideBuildingTooltip();
+  });
+  
+  // Touch поддержка (долгое нажатие)
+  canvas.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const mx = (touch.clientX - rect.left) / canvasScale;
+    const my = (touch.clientY - rect.top) / canvasScale;
+    
+    touchTimer = setTimeout(() => {
+      const building = getBuildingAtPosition(mx, my);
+      if (building) {
+        hoveredBuilding = building;
+        showBuildingTooltip(building, touch.clientX, touch.clientY);
+      }
+    }, 500); // 500ms для долгого нажатия
+  });
+  
+  canvas.addEventListener('touchend', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+    }
+    hoveredBuilding = null;
+    hideBuildingTooltip();
+  });
+  
+  canvas.addEventListener('touchmove', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+    }
+    hoveredBuilding = null;
+    hideBuildingTooltip();
   });
 }
 
