@@ -4,7 +4,7 @@ const SAVE_KEY = 'neural_tycoon_save_v1';
 const SAVE_VERSION = 1;
 
 const state = {
-  money: 20,
+  money: CONFIG.debug.enabled ? 1000000 : 20, // DEBUG_TOOL
   lifetime: 0,
   keys: 0,
   owned: {},
@@ -20,7 +20,7 @@ const state = {
   // Квесты
   questIndex: 0,
   // Наука
-  science: 0,
+  science: CONFIG.debug.enabled ? 1000 : 0, // DEBUG_TOOL
   scienceLifetime: 0,
   // Технологии
   tech: {},
@@ -139,8 +139,8 @@ function resetGame() {
   localStorage.removeItem(SAVE_KEY);
   
   // Сбрасываем состояние
-  state.money = 20;
-  state.science = 0;
+  state.money = CONFIG.debug.enabled ? 1000000 : 20; // DEBUG_TOOL
+  state.science = CONFIG.debug.enabled ? 1000 : 0; // DEBUG_TOOL
   state.scienceLifetime = 0;
   state.lifetime = 0;
   state.keys = 0;
@@ -1622,8 +1622,9 @@ function renderQuests() {
 
 // ========== Престиж ==========
 function getPrestigeKeys() {
-  if (state.lifetime < 1e6) return 0;
-  return Math.floor(Math.sqrt(state.lifetime / 1e6));
+  const threshold = CONFIG.debug.enabled ? 1000 : 1e6; // DEBUG_TOOL
+  if (state.lifetime < threshold) return 0;
+  return Math.floor(Math.sqrt(state.lifetime / threshold));
 }
 
 function getNextRankReward() {
@@ -1934,6 +1935,75 @@ function initHudResizeObserver() {
   // Первоначальное обновление
   updateHudHeight();
 }
+
+// ========== DEBUG TOOLS ========== // DEBUG_TOOL
+if (CONFIG.debug.enabled) { // DEBUG_TOOL
+  window.NT_DEBUG = { // DEBUG_TOOL
+    addMoney(n) { state.money += n; updateHUD(); }, // DEBUG_TOOL
+    addScience(n) { state.science += n; updateHUD(); }, // DEBUG_TOOL
+    setLifetime(n) { state.lifetime = n; updatePrestigeButton(); }, // DEBUG_TOOL
+    finishCurrentQuest() { // DEBUG_TOOL
+      if (state.questIndex >= CONFIG.quests.length) return; // DEBUG_TOOL
+      const quest = CONFIG.quests[state.questIndex]; // DEBUG_TOOL
+      if (quest.goal.type === 'own') state.owned[quest.goal.id] = quest.goal.n; // DEBUG_TOOL
+      else if (quest.goal.type === 'hire') state.managers[quest.goal.id] = true; // DEBUG_TOOL
+      else if (quest.goal.type === 'contracts') state.contractsDone = quest.goal.n; // DEBUG_TOOL
+      else if (quest.goal.type === 'lifetime') state.lifetime = quest.goal.n; // DEBUG_TOOL
+      completeQuest(); updateShop(); updateManagers(); renderQuests(); // DEBUG_TOOL
+    }, // DEBUG_TOOL
+    offerContractNow() { state.lastOfferTime = 0; tryOfferContract(); }, // DEBUG_TOOL
+    triggerGrayGateway() { // DEBUG_TOOL
+      if (state.purchased.ver) { // DEBUG_TOOL
+        showToast('Серый шлюз заблокирован: ZERO SPOOFING', 'success'); // DEBUG_TOOL
+        showStamp(); // DEBUG_TOOL
+      } else { // DEBUG_TOOL
+        showToast('Серый шлюз перехватывает трафик: −50% дохода на 20s', 'danger'); // DEBUG_TOOL
+        state.debuffUntil = Date.now() + 20000; // DEBUG_TOOL
+      } // DEBUG_TOOL
+    }, // DEBUG_TOOL
+    giveAllBuildings(n) { // DEBUG_TOOL
+      CONFIG.buildings.forEach(b => { // DEBUG_TOOL
+        state.owned[b.id] += n; // DEBUG_TOOL
+        for (let i = 0; i < n; i++) placeBuildingOnMap(b.id); // DEBUG_TOOL
+      }); // DEBUG_TOOL
+      updateShop(); updateHUD(); // DEBUG_TOOL
+    }, // DEBUG_TOOL
+    unlockAllTech() { // DEBUG_TOOL
+      CONFIG.tech.forEach(t => { state.tech[t.id] = true; }); // DEBUG_TOOL
+    }, // DEBUG_TOOL
+    prestigeNow() { // DEBUG_TOOL
+      if (state.lifetime < 1000) state.lifetime = 1000; // DEBUG_TOOL
+      openPrestigeModal(); // DEBUG_TOOL
+    } // DEBUG_TOOL
+  }; // DEBUG_TOOL
+  
+  const debugToggle = document.createElement('button'); // DEBUG_TOOL
+  debugToggle.className = 'debug-toggle'; // DEBUG_TOOL
+  debugToggle.textContent = 'DBG'; // DEBUG_TOOL
+  debugToggle.onclick = () => { // DEBUG_TOOL
+    const panel = document.querySelector('.debug-panel'); // DEBUG_TOOL
+    if (panel) panel.classList.toggle('debug-panel--collapsed'); // DEBUG_TOOL
+  }; // DEBUG_TOOL
+  document.body.appendChild(debugToggle); // DEBUG_TOOL
+  
+  const debugPanel = document.createElement('div'); // DEBUG_TOOL
+  debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TOOL
+  debugPanel.innerHTML = ` // DEBUG_TOOL
+    <div class="debug-panel__title">DEBUG</div>
+    <div class="debug-panel__grid">
+      <button class="debug-panel__btn" onclick="NT_DEBUG.addMoney(1000000)">+1M $</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.addScience(1000)">+1K sci</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.setLifetime(1000)">life=1K</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.finishCurrentQuest()">quest</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.offerContractNow()">contract</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.triggerGrayGateway()">gateway</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.giveAllBuildings(5)">+5 bld</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.unlockAllTech()">tech</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.prestigeNow()">prestige</button>
+    </div>
+  `; // DEBUG_TOOL
+  document.body.appendChild(debugPanel); // DEBUG_TOOL
+} // DEBUG_TOOL
 
 // Инициализация после загрузки DOM
 if (document.readyState === 'loading') {

@@ -1212,6 +1212,102 @@ body {
   color: var(--text);
 }
 
+/* ---------- Debug Toggle ---------- */ /* DEBUG_TOOL */
+.debug-toggle { /* DEBUG_TOOL */
+  position: fixed; /* DEBUG_TOOL */
+  bottom: 12px; /* DEBUG_TOOL */
+  right: 12px; /* DEBUG_TOOL */
+  z-index: 1000; /* DEBUG_TOOL */
+  width: 48px; /* DEBUG_TOOL */
+  height: 48px; /* DEBUG_TOOL */
+  border-radius: 50%; /* DEBUG_TOOL */
+  background: var(--glass-bg); /* DEBUG_TOOL */
+  border: 2px solid var(--green); /* DEBUG_TOOL */
+  backdrop-filter: blur(12px); /* DEBUG_TOOL */
+  -webkit-backdrop-filter: blur(12px); /* DEBUG_TOOL */
+  box-shadow: 0 0 20px rgba(70, 247, 154, 0.4); /* DEBUG_TOOL */
+  font-family: 'Oswald', sans-serif; /* DEBUG_TOOL */
+  font-weight: 700; /* DEBUG_TOOL */
+  font-size: 0.85rem; /* DEBUG_TOOL */
+  color: var(--green); /* DEBUG_TOOL */
+  cursor: pointer; /* DEBUG_TOOL */
+  transition: all 0.3s; /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-toggle:hover { /* DEBUG_TOOL */
+  box-shadow: 0 0 30px rgba(70, 247, 154, 0.6); /* DEBUG_TOOL */
+  transform: scale(1.1); /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+/* ---------- Debug Panel ---------- */ /* DEBUG_TOOL */
+.debug-panel { /* DEBUG_TOOL */
+  position: fixed; /* DEBUG_TOOL */
+  bottom: 72px; /* DEBUG_TOOL */
+  right: 12px; /* DEBUG_TOOL */
+  z-index: 999; /* DEBUG_TOOL */
+  width: 220px; /* DEBUG_TOOL */
+  max-height: 40vh; /* DEBUG_TOOL */
+  background: var(--glass-bg); /* DEBUG_TOOL */
+  border: 1px solid var(--line); /* DEBUG_TOOL */
+  border-radius: 14px; /* DEBUG_TOOL */
+  padding: 12px; /* DEBUG_TOOL */
+  backdrop-filter: blur(12px); /* DEBUG_TOOL */
+  -webkit-backdrop-filter: blur(12px); /* DEBUG_TOOL */
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.3); /* DEBUG_TOOL */
+  overflow-y: auto; /* DEBUG_TOOL */
+  transition: all 0.3s ease; /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel--collapsed { /* DEBUG_TOOL */
+  opacity: 0; /* DEBUG_TOOL */
+  pointer-events: none; /* DEBUG_TOOL */
+  transform: translateY(20px); /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel__title { /* DEBUG_TOOL */
+  font-family: 'Oswald', sans-serif; /* DEBUG_TOOL */
+  font-weight: 700; /* DEBUG_TOOL */
+  font-size: 0.85rem; /* DEBUG_TOOL */
+  text-transform: uppercase; /* DEBUG_TOOL */
+  letter-spacing: 0.06em; /* DEBUG_TOOL */
+  color: var(--green); /* DEBUG_TOOL */
+  text-align: center; /* DEBUG_TOOL */
+  margin-bottom: 10px; /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel__grid { /* DEBUG_TOOL */
+  display: grid; /* DEBUG_TOOL */
+  grid-template-columns: repeat(2, 1fr); /* DEBUG_TOOL */
+  gap: 8px; /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel__btn { /* DEBUG_TOOL */
+  font-family: 'Manrope', sans-serif; /* DEBUG_TOOL */
+  font-weight: 600; /* DEBUG_TOOL */
+  font-size: 0.7rem; /* DEBUG_TOOL */
+  color: var(--text); /* DEBUG_TOOL */
+  background: rgba(168, 85, 247, 0.2); /* DEBUG_TOOL */
+  border: 1px solid var(--line); /* DEBUG_TOOL */
+  border-radius: 8px; /* DEBUG_TOOL */
+  padding: 8px 6px; /* DEBUG_TOOL */
+  cursor: pointer; /* DEBUG_TOOL */
+  transition: all 0.2s; /* DEBUG_TOOL */
+  text-align: center; /* DEBUG_TOOL */
+  white-space: nowrap; /* DEBUG_TOOL */
+  overflow: hidden; /* DEBUG_TOOL */
+  text-overflow: ellipsis; /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel__btn:hover { /* DEBUG_TOOL */
+  background: rgba(168, 85, 247, 0.35); /* DEBUG_TOOL */
+  border-color: var(--primary); /* DEBUG_TOOL */
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
+.debug-panel__btn:active { /* DEBUG_TOOL */
+  transform: scale(0.97); /* DEBUG_TOOL */
+} /* DEBUG_TOOL */
+
 /* ---------- Offline Modal ---------- */
 .offline-modal {
   position: fixed;
