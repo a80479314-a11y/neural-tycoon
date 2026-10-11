@@ -1,4 +1,5 @@
 export const CONFIG = {
+  debug: { enabled: true }, // DEBUG_TEMP
   clickPower: 1,
   costGrowth: 1.15,
   buildings: [

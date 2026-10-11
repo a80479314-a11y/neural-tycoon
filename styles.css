@@ -1166,6 +1166,60 @@ body {
   color: var(--text);
 }
 
+/* ---------- Debug Panel ---------- */ /* DEBUG_TEMP */
+.debug-panel { /* DEBUG_TEMP */
+  position: fixed; /* DEBUG_TEMP */
+  bottom: 80px; /* DEBUG_TEMP */
+  right: 20px; /* DEBUG_TEMP */
+  z-index: 9999; /* DEBUG_TEMP */
+  background: var(--glass-bg); /* DEBUG_TEMP */
+  border: 1px solid var(--line); /* DEBUG_TEMP */
+  border-radius: 14px; /* DEBUG_TEMP */
+  padding: 12px; /* DEBUG_TEMP */
+  backdrop-filter: blur(12px); /* DEBUG_TEMP */
+  -webkit-backdrop-filter: blur(12px); /* DEBUG_TEMP */
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.3); /* DEBUG_TEMP */
+  display: flex; /* DEBUG_TEMP */
+  flex-direction: column; /* DEBUG_TEMP */
+  gap: 8px; /* DEBUG_TEMP */
+  max-width: 200px; /* DEBUG_TEMP */
+} /* DEBUG_TEMP */
+
+.debug-panel__title { /* DEBUG_TEMP */
+  font-family: 'Oswald', sans-serif; /* DEBUG_TEMP */
+  font-weight: 700; /* DEBUG_TEMP */
+  font-size: 0.9rem; /* DEBUG_TEMP */
+  text-transform: uppercase; /* DEBUG_TEMP */
+  letter-spacing: 0.06em; /* DEBUG_TEMP */
+  color: var(--green); /* DEBUG_TEMP */
+  text-align: center; /* DEBUG_TEMP */
+  margin-bottom: 4px; /* DEBUG_TEMP */
+} /* DEBUG_TEMP */
+
+.debug-panel__btn { /* DEBUG_TEMP */
+  font-family: 'Manrope', sans-serif; /* DEBUG_TEMP */
+  font-weight: 600; /* DEBUG_TEMP */
+  font-size: 0.75rem; /* DEBUG_TEMP */
+  color: var(--text); /* DEBUG_TEMP */
+  background: rgba(168, 85, 247, 0.2); /* DEBUG_TEMP */
+  border: 1px solid var(--line); /* DEBUG_TEMP */
+  border-radius: 8px; /* DEBUG_TEMP */
+  padding: 8px 12px; /* DEBUG_TEMP */
+  cursor: pointer; /* DEBUG_TEMP */
+  transition: all 0.2s; /* DEBUG_TEMP */
+  text-align: left; /* DEBUG_TEMP */
+} /* DEBUG_TEMP */
+
+.debug-panel__btn:hover { /* DEBUG_TEMP */
+  background: rgba(168, 85, 247, 0.35); /* DEBUG_TEMP */
+  border-color: var(--primary); /* DEBUG_TEMP */
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); /* DEBUG_TEMP */
+} /* DEBUG_TEMP */
+
+.debug-panel__btn:active { /* DEBUG_TEMP */
+  transform: scale(0.97); /* DEBUG_TEMP */
+} /* DEBUG_TEMP */
+
 /* ---------- Mobile Layout (<900px) ---------- */
 @media (max-width: 900px) {
   html, body {
