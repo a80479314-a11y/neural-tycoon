@@ -138,17 +138,12 @@ function applySaveData(data) {
   CONFIG.buildings.forEach(b => {
     const count = state.owned[b.id] || 0;
     if (count > 0) {
-      // Добавляем здания на карту (максимум MAX_CLONES визуальных объектов)
-      const visualCount = Math.min(count, MAX_CLONES);
-      for (let i = 0; i < visualCount; i++) {
-        placeBuildingOnMap(b.id);
-      }
-      // Если count > MAX_CLONES, обновляем счётчик последнего объекта
-      if (count > MAX_CLONES) {
-        const lastBuilding = mapBuildings.find(mb => mb.type === b.id);
-        if (lastBuilding) {
-          lastBuilding.count = count;
-        }
+      // Добавляем здание на карту с фиксированной позицией
+      placeBuildingOnMap(b.id);
+      // Устанавливаем количество клонов
+      const building = mapBuildings.find(mb => mb.type === b.id);
+      if (building) {
+        building.count = count;
       }
     }
   });
@@ -1055,11 +1050,15 @@ function drawBuildingAura(building) {
 function drawBuilding(building) {
   const { x, y } = tileToScreen(building.i, building.j);
   const pulse = Math.sin(animTime * 3 + building.tileIndex) * 0.1 + 1;
+  const scale = 0.85; // Масштаб объектов
   
   // Аура
   drawBuildingAura(building);
   
   ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  ctx.translate(-x, -y);
   
   switch (building.type) {
     case 'bpe': // Сканер-ворота с пульсирующими токенами
@@ -1254,6 +1253,24 @@ function drawBuilding(building) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(building.count.toString(), x + 20, y - 35);
+    
+    // Точки-спутники для клонов (до 5 точек по краю тайла)
+    const satelliteCount = Math.min(building.count - 1, 5);
+    const satelliteRadius = 25;
+    const color = BUILDING_AURAS[building.type] || '#a855f7';
+    
+    for (let i = 0; i < satelliteCount; i++) {
+      const angle = (i / satelliteCount) * Math.PI * 2 + animTime * 0.3;
+      const satX = x + Math.cos(angle) * satelliteRadius;
+      const satY = y + Math.sin(angle) * satelliteRadius * 0.6; // Изометрическое сжатие
+      
+      ctx.fillStyle = color;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = color;
+      ctx.beginPath();
+      ctx.arc(satX, satY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   
   ctx.restore();
@@ -1383,27 +1400,34 @@ function renderMap() {
   drawPulses();
 }
 
-// Размещение здания на карте
+// Фиксированные позиции для каждого типа здания (звезда на расстоянии 2 от центра)
+const BUILDING_POSITIONS = {
+  bpe: { i: 0, j: 2 },      // Север
+  attn: { i: 2, j: 4 },     // Северо-восток
+  gpu: { i: 4, j: 4 },      // Юго-восток
+  inf: { i: 4, j: 2 },      // Юг
+  ver: { i: 2, j: 0 }       // Юго-запад
+};
+
+// Размещение здания на карте (фиксированная позиция для каждого типа)
 function placeBuildingOnMap(buildingId) {
   const existing = mapBuildings.find(b => b.type === buildingId);
-  
-  if (existing && existing.count >= MAX_CLONES) {
-    existing.count++;
-    return;
-  }
   
   if (existing) {
     existing.count++;
     return;
   }
   
-  if (nextTileIndex >= spiralOrder.length) return;
+  const pos = BUILDING_POSITIONS[buildingId];
+  if (!pos) return;
   
-  const [i, j] = spiralOrder[nextTileIndex];
-  const tileIndex = nextTileIndex;
-  nextTileIndex++;
-  
-  mapBuildings.push({ type: buildingId, tileIndex, count: 1, i, j });
+  mapBuildings.push({ 
+    type: buildingId, 
+    tileIndex: 0, 
+    count: 1, 
+    i: pos.i, 
+    j: pos.j 
+  });
 }
 
 // Система тултипов
