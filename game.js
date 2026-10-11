@@ -1580,19 +1580,30 @@ if (CONFIG.debug.enabled) { // DEBUG_TEMP
   }; // DEBUG_TEMP
   
   // Создаём панель отладки // DEBUG_TEMP
+  const debugToggle = document.createElement('button'); // DEBUG_TEMP
+  debugToggle.className = 'debug-toggle'; // DEBUG_TEMP
+  debugToggle.textContent = 'DBG'; // DEBUG_TEMP
+  debugToggle.onclick = () => { // DEBUG_TEMP
+    const panel = document.querySelector('.debug-panel'); // DEBUG_TEMP
+    if (panel) panel.classList.toggle('debug-panel--collapsed'); // DEBUG_TEMP
+  }; // DEBUG_TEMP
+  document.body.appendChild(debugToggle); // DEBUG_TEMP
+  
   const debugPanel = document.createElement('div'); // DEBUG_TEMP
-  debugPanel.className = 'debug-panel'; // DEBUG_TEMP
+  debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TEMP
   debugPanel.innerHTML = ` // DEBUG_TEMP
-    <div class="debug-panel__title">DEBUG</div> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.addMoney(1000000)">+1 млн $</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.addScience(1000)">+1 тыс науки</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.setLifetime(1000000)">lifetime = 1 млн</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.finishCurrentQuest()">квест выполнен</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.offerContractNow()">оффер контракта</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.triggerGrayGateway()">серый шлюз</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.giveAllBuildings(5)">+5 ко всем зданиям</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.unlockAllTech()">все технологии</button> // DEBUG_TEMP
-    <button class="debug-panel__btn" onclick="NT_DEBUG.prestigeNow()">престиж</button> // DEBUG_TEMP
+    <div class="debug-panel__title">DEBUG</div>
+    <div class="debug-panel__grid">
+      <button class="debug-panel__btn" onclick="NT_DEBUG.addMoney(1000000)">+1 млн $</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.addScience(1000)">+1 тыс науки</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.setLifetime(1000000)">lifetime = 1M</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.finishCurrentQuest()">квест</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.offerContractNow()">контракт</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.triggerGrayGateway()">шлюз</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.giveAllBuildings(5)">+5 зданий</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.unlockAllTech()">все tech</button>
+      <button class="debug-panel__btn" onclick="NT_DEBUG.prestigeNow()">престиж</button>
+    </div>
   `; // DEBUG_TEMP
   document.body.appendChild(debugPanel); // DEBUG_TEMP
 } // DEBUG_TEMP
