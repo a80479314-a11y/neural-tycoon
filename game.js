@@ -1,5 +1,8 @@
 import { CONFIG } from './config.js';
 
+const SAVE_KEY = 'neural_tycoon_save_v1';
+const SAVE_VERSION = 1;
+
 const state = {
   money: 20,
   lifetime: 0,
@@ -31,6 +34,219 @@ CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
 CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
 CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
 CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
+
+// ========== Система сохранений ==========
+function saveGame() {
+  try {
+    const saveData = {
+      version: SAVE_VERSION,
+      timestamp: Date.now(),
+      money: state.money,
+      science: state.science,
+      scienceLifetime: state.scienceLifetime,
+      lifetime: state.lifetime,
+      keys: state.keys,
+      prestiges: state.prestiges,
+      owned: { ...state.owned },
+      purchased: { ...state.purchased },
+      managers: { ...state.managers },
+      tech: { ...state.tech },
+      questIndex: state.questIndex,
+      contractsDone: state.contractsDone,
+      contractOffer: state.contractOffer,
+      contractActive: state.contractActive,
+      lastOfferTime: state.lastOfferTime,
+      debuffUntil: state.debuffUntil,
+      // Сохраняем TPS для офлайн-прогресса
+      tps: getIncome(),
+      scienceTps: getScienceIncome()
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  } catch (e) {
+    console.warn('Save failed:', e);
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    
+    const data = JSON.parse(raw);
+    if (!data || data.version !== SAVE_VERSION) {
+      localStorage.removeItem(SAVE_KEY);
+      return null;
+    }
+    
+    return data;
+  } catch (e) {
+    console.warn('Load failed:', e);
+    localStorage.removeItem(SAVE_KEY);
+    return null;
+  }
+}
+
+function applySaveData(data) {
+  if (!data) return;
+  
+  state.money = data.money ?? 20;
+  state.science = data.science ?? 0;
+  state.scienceLifetime = data.scienceLifetime ?? 0;
+  state.lifetime = data.lifetime ?? 0;
+  state.keys = data.keys ?? 0;
+  state.prestiges = data.prestiges ?? 0;
+  state.questIndex = data.questIndex ?? 0;
+  state.contractsDone = data.contractsDone ?? 0;
+  state.lastOfferTime = data.lastOfferTime ?? 0;
+  state.debuffUntil = data.debuffUntil ?? 0;
+  
+  // Восстанавливаем owned
+  if (data.owned) {
+    CONFIG.buildings.forEach(b => {
+      state.owned[b.id] = data.owned[b.id] ?? 0;
+    });
+  }
+  
+  // Восстанавливаем purchased
+  if (data.purchased) {
+    CONFIG.upgrades.forEach(u => {
+      state.purchased[u.id] = data.purchased[u.id] ?? false;
+    });
+  }
+  
+  // Восстанавливаем managers
+  if (data.managers) {
+    CONFIG.managers.forEach(m => {
+      state.managers[m.id] = data.managers[m.id] ?? false;
+    });
+  }
+  
+  // Восстанавливаем tech
+  if (data.tech) {
+    CONFIG.tech.forEach(t => {
+      state.tech[t.id] = data.tech[t.id] ?? false;
+    });
+  }
+  
+  // Восстанавливаем контракты
+  state.contractOffer = data.contractOffer ?? null;
+  state.contractActive = data.contractActive ?? null;
+}
+
+function resetGame() {
+  if (!window.confirm('Сбросить империю?')) return;
+  
+  localStorage.removeItem(SAVE_KEY);
+  
+  // Сбрасываем состояние
+  state.money = 20;
+  state.science = 0;
+  state.scienceLifetime = 0;
+  state.lifetime = 0;
+  state.keys = 0;
+  state.prestiges = 0;
+  state.questIndex = 0;
+  state.contractsDone = 0;
+  state.lastOfferTime = 0;
+  state.debuffUntil = 0;
+  state.contractOffer = null;
+  state.contractActive = null;
+  
+  CONFIG.buildings.forEach(b => { state.owned[b.id] = 0; });
+  CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
+  CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
+  CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
+  
+  // Обновляем UI
+  updateHUD();
+  updateShop();
+  updateUpgrades();
+  updateManagers();
+  renderQuests();
+  updateRankBadge();
+  updatePrestigeButton();
+  
+  // Очищаем контракты
+  const contractsEl = document.getElementById('contracts');
+  if (contractsEl) contractsEl.innerHTML = '';
+}
+
+// ========== Офлайн-прогресс ==========
+function calculateOfflineProgress(saveData) {
+  if (!saveData || !saveData.timestamp) return null;
+  
+  const now = Date.now();
+  const elapsed = now - saveData.timestamp;
+  const elapsedSeconds = elapsed / 1000;
+  
+  // Показываем модалку только если прошло > 60 секунд
+  if (elapsedSeconds < 60) return null;
+  
+  // Максимум 8 часов
+  const maxOfflineSeconds = 8 * 60 * 60;
+  const offlineSeconds = Math.min(elapsedSeconds, maxOfflineSeconds);
+  
+  // Эффективность 50%
+  const efficiency = 0.5;
+  
+  const tps = saveData.tps ?? 0;
+  const scienceTps = saveData.scienceTps ?? 0;
+  
+  const moneyEarned = tps * offlineSeconds * efficiency;
+  const scienceEarned = scienceTps * offlineSeconds * efficiency;
+  
+  return {
+    elapsedSeconds,
+    offlineSeconds,
+    moneyEarned,
+    scienceEarned
+  };
+}
+
+function showOfflineModal(offlineData) {
+  if (!offlineData) return;
+  
+  // Начисляем доход сразу
+  state.money += offlineData.moneyEarned;
+  state.science += offlineData.scienceEarned;
+  state.scienceLifetime += offlineData.scienceEarned;
+  state.lifetime += offlineData.moneyEarned;
+  
+  // Форматируем время
+  const hours = Math.floor(offlineData.elapsedSeconds / 3600);
+  const minutes = Math.floor((offlineData.elapsedSeconds % 3600) / 60);
+  
+  let timeString = '';
+  if (hours > 0) {
+    timeString = `${hours}ч ${minutes}м`;
+  } else {
+    timeString = `${minutes}м`;
+  }
+  
+  // Создаём модалку
+  const modal = document.createElement('div');
+  modal.className = 'offline-modal';
+  modal.innerHTML = `
+    <div class="offline-modal__content">
+      <h2 class="offline-modal__title">ПОКА ТЕБЯ НЕ БЫЛО</h2>
+      <p class="offline-modal__time">Отсутствовал: ${timeString}</p>
+      <div class="offline-modal__rewards">
+        <div class="offline-modal__reward">Сеть заработала: +${formatNumber(offlineData.moneyEarned)}$</div>
+        <div class="offline-modal__reward">+${formatNumber(offlineData.scienceEarned)} науки</div>
+      </div>
+      <button class="offline-modal__btn" id="offline-modal-close">ЗАБРАТЬ</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Обработчик закрытия
+  const closeBtn = modal.querySelector('#offline-modal-close');
+  closeBtn.addEventListener('click', () => {
+    modal.remove();
+    updateHUD();
+  });
+}
 
 // Получить стартовый капитал из ранг-наград
 function getStartingMoney() {
@@ -1442,6 +1658,18 @@ function initHudResizeObserver() {
 // Инициализация после загрузки DOM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    // Загрузка сохранения
+    const saveData = loadGame();
+    if (saveData) {
+      applySaveData(saveData);
+      
+      // Офлайн-прогресс
+      const offlineData = calculateOfflineProgress(saveData);
+      if (offlineData) {
+        showOfflineModal(offlineData);
+      }
+    }
+    
     initCanvas();
     animate();
     renderShop();
@@ -1450,7 +1678,19 @@ if (document.readyState === 'loading') {
     renderQuests();
     updateRankBadge();
     updatePrestigeButton();
+    updateHUD();
     initHudResizeObserver();
+    
+    // Автосейв каждые 5 секунд
+    setInterval(saveGame, 5000);
+    
+    // Сохранение при скрытии вкладки
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) saveGame();
+    });
+    
+    // Сохранение перед закрытием
+    window.addEventListener('beforeunload', saveGame);
     
     // Обработчики оверлея
     const openBtn = document.getElementById('research-open');
@@ -1477,6 +1717,18 @@ if (document.readyState === 'loading') {
     });
   });
 } else {
+  // Загрузка сохранения
+  const saveData = loadGame();
+  if (saveData) {
+    applySaveData(saveData);
+    
+    // Офлайн-прогресс
+    const offlineData = calculateOfflineProgress(saveData);
+    if (offlineData) {
+      showOfflineModal(offlineData);
+    }
+  }
+  
   initCanvas();
   animate();
   renderShop();
@@ -1485,11 +1737,26 @@ if (document.readyState === 'loading') {
   renderQuests();
   updateRankBadge();
   updatePrestigeButton();
+  updateHUD();
   initHudResizeObserver();
   
-  const openBtn = document.getElementById('research-open');
-  if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
+  // Автосейв каждые 5 секунд
+  setInterval(saveGame, 5000);
   
+  // Сохранение при скрытии вкладки
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) saveGame();
+  });
+  
+    // Сохранение перед закрытием
+    window.addEventListener('beforeunload', saveGame);
+    
+    // Кнопка сброса
+    const resetBtn = document.querySelector('.btn-reset');
+    if (resetBtn) resetBtn.addEventListener('click', resetGame);
+    
+    const openBtn = document.getElementById('research-open');
+    if (openBtn) openBtn.addEventListener('click', openResearchOverlay);  
   const closeBtn = document.getElementById('research-close');
   if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
   
