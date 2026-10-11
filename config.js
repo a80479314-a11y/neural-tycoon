@@ -1,7 +1,7 @@
 // Определение debug режима // DEBUG_TOOL
 const isDebugMode = () => { // DEBUG_TOOL
   const urlParams = new URLSearchParams(window.location.search); // DEBUG_TOOL
-  return urlParams.get('debug') === '1' || localStorage.getItem('nt_debug') === '1'; // DEBUG_TOOL
+  return !(urlParams.get('debug') === '0' || localStorage.getItem('nt_debug') === '0'); // DEBUG_TOOL
 }; // DEBUG_TOOL
 
 export const CONFIG = {
