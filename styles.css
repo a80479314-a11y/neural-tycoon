@@ -16,6 +16,8 @@
   --glass-bg: rgba(24, 16, 32, 0.78);
   --glass-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
   --glass-shadow-lg: 0 0 60px rgba(124, 58, 237, 0.45);
+  
+  --hud-h: 120px;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -340,7 +342,7 @@ body {
   -webkit-backdrop-filter: blur(14px);
   box-shadow: -20px 0 60px rgba(124, 58, 237, 0.15);
   overflow-y: auto;
-  padding: 100px 20px 24px 20px;
+  padding: calc(var(--hud-h) + 16px) 20px 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -999,12 +1001,15 @@ body {
 .rank-rewards-line {
   font-family: 'Manrope', sans-serif;
   font-weight: 400;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.02em;
   text-align: center;
-  max-width: 140px;
+  max-width: 100%;
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Prestige Pill ---------- */

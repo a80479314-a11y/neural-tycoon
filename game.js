@@ -1417,6 +1417,28 @@ function closeResearchOverlay() {
   overlay.style.display = 'none';
 }
 
+// Обновление высоты HUD для padding-top панели
+function updateHudHeight() {
+  const hud = document.querySelector('.hud');
+  if (hud) {
+    const hudHeight = hud.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--hud-h', hudHeight + 'px');
+  }
+}
+
+// ResizeObserver для отслеживания изменений размера HUD
+function initHudResizeObserver() {
+  const hud = document.querySelector('.hud');
+  if (hud && typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(() => {
+      updateHudHeight();
+    });
+    observer.observe(hud);
+  }
+  // Первоначальное обновление
+  updateHudHeight();
+}
+
 // Инициализация после загрузки DOM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
@@ -1428,6 +1450,7 @@ if (document.readyState === 'loading') {
     renderQuests();
     updateRankBadge();
     updatePrestigeButton();
+    initHudResizeObserver();
     
     // Обработчики оверлея
     const openBtn = document.getElementById('research-open');
@@ -1462,6 +1485,7 @@ if (document.readyState === 'loading') {
   renderQuests();
   updateRankBadge();
   updatePrestigeButton();
+  initHudResizeObserver();
   
   const openBtn = document.getElementById('research-open');
   if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
