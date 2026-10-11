@@ -1304,7 +1304,7 @@ function drawConnectionLines() {
     const { x: startX, y: startY } = tileToScreen(conn.building.i, conn.building.j);
     
     // Линия от центра тайла здания к центру тайла ядра
-    ctx.strokeStyle = 'rgba(190, 120, 255, 0.35)';
+    ctx.strokeStyle = 'rgba(190, 120, 255, 0.5)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(startX, startY);
@@ -2085,7 +2085,7 @@ if (document.readyState === 'loading') {
       debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TOOL
       debugPanel.setAttribute('data-debug', 'panel'); // DEBUG_TOOL
       debugPanel.innerHTML = ` // DEBUG_TOOL
-        <div class="debug-panel__title">DEBUG</div>
+        <div class="debug-panel__title">DBG</div>
         <div class="debug-panel__grid">
           <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addMoney(1000000)">+1M $</button>
           <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addScience(1000)">+1K sci</button>
@@ -2222,7 +2222,7 @@ if (document.readyState === 'loading') {
     debugPanel.className = 'debug-panel debug-panel--collapsed'; // DEBUG_TOOL
     debugPanel.setAttribute('data-debug', 'panel'); // DEBUG_TOOL
     debugPanel.innerHTML = ` // DEBUG_TOOL
-      <div class="debug-panel__title">DEBUG</div>
+      <div class="debug-panel__title">DBG</div>
       <div class="debug-panel__grid">
         <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addMoney(1000000)">+1M $</button>
         <button class="debug-panel__btn" data-debug="btn" onclick="NT_DEBUG.addScience(1000)">+1K sci</button>

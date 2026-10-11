@@ -1023,6 +1023,7 @@ body {
   align-items: center;
   gap: 6px;
   min-width: 140px;
+  max-width: 280px;
 }
 
 .rank-badge__diamond {
