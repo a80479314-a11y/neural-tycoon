@@ -147,6 +147,9 @@ function applySaveData(data) {
       }
     }
   });
+  
+  // Инициализируем соединения после восстановления карты
+  initConnections();
 }
 
 function resetGame() {
@@ -1276,68 +1279,49 @@ function drawBuilding(building) {
   ctx.restore();
 }
 
-// Система пульсов для линий-связей
-const MAX_PULSES = 50; // Лимит для 60fps
-const pulses = [];
+// Система линий-связей с пульсами
+const connections = []; // {building, phase, speed, color}
 
-function spawnPulse(building) {
-  if (pulses.length >= MAX_PULSES) return;
-  
-  const { x: startX, y: startY } = tileToScreen(building.i, building.j);
-  const center = Math.floor(MAP_SIZE / 2);
-  const { x: endX, y: endY } = tileToScreen(center, center);
-  
-  pulses.push({
-    startX, startY,
-    endX, endY,
-    progress: 0,
-    speed: 0.01 + Math.random() * 0.005, // Разная скорость для разнообразия
-    color: BUILDING_AURAS[building.type] || '#a855f7'
+function initConnections() {
+  connections.length = 0;
+  mapBuildings.forEach(building => {
+    connections.push({
+      building,
+      phase: Math.random() * Math.PI * 2, // Разная фаза для каждого здания
+      speed: 0.008 + Math.random() * 0.004, // Цикл 1.5-2с при 60fps
+      color: BUILDING_AURAS[building.type] || '#a855f7'
+    });
   });
 }
 
-function updatePulses() {
-  // Обновляем прогресс и удаляем завершённые
-  for (let i = pulses.length - 1; i >= 0; i--) {
-    pulses[i].progress += pulses[i].speed;
-    if (pulses[i].progress >= 1) {
-      pulses.splice(i, 1);
-    }
-  }
+function drawConnectionLines() {
+  if (connections.length === 0) return;
   
-  // Генерируем новые пульсы раз в 1.5-2с для каждого здания
-  if (Math.random() < 0.02) { // ~60fps * 0.02 = ~1.2с
-    mapBuildings.forEach(building => {
-      if (Math.random() < 0.3) { // 30% шанс для каждого здания
-        spawnPulse(building);
-      }
-    });
-  }
-}
-
-function drawPulses() {
   const center = Math.floor(MAP_SIZE / 2);
   const { x: coreX, y: coreY } = tileToScreen(center, center);
   
-  pulses.forEach(pulse => {
-    // Линия от здания к ядру
-    ctx.strokeStyle = 'rgba(190, 120, 255, 0.2)';
+  connections.forEach(conn => {
+    const { x: startX, y: startY } = tileToScreen(conn.building.i, conn.building.j);
+    
+    // Линия от центра тайла здания к центру тайла ядра
+    ctx.strokeStyle = 'rgba(190, 120, 255, 0.35)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(pulse.startX, pulse.startY - 20); // От верхушки здания
+    ctx.moveTo(startX, startY);
     ctx.lineTo(coreX, coreY);
     ctx.stroke();
     
-    // Пульс-точка
-    const currentX = pulse.startX + (coreX - pulse.startX) * pulse.progress;
-    const currentY = (pulse.startY - 20) + (coreY - (pulse.startY - 20)) * pulse.progress;
+    // Пульс-точка, движущаяся по линии
+    const progress = (Math.sin(animTime * conn.speed * 60 + conn.phase) + 1) / 2; // 0-1
+    const currentX = startX + (coreX - startX) * progress;
+    const currentY = startY + (coreY - startY) * progress;
     
     ctx.save();
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = pulse.color;
-    ctx.fillStyle = pulse.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = conn.color;
+    ctx.fillStyle = '#e9d5ff';
     ctx.beginPath();
-    ctx.arc(currentX, currentY, 3, 0, Math.PI * 2);
+    ctx.arc(currentX, currentY, 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   });
@@ -1351,9 +1335,6 @@ function isTileUnderBuilding(i, j) {
 // Основной цикл отрисовки
 function renderMap() {
   if (!ctx) return;
-  
-  // Обновляем пульсы
-  updatePulses();
   
   // Очистка (в логических координатах до масштабирования)
   ctx.save();
@@ -1396,8 +1377,8 @@ function renderMap() {
     }
   });
   
-  // Отрисовка пульсов поверх всего
-  drawPulses();
+  // Отрисовка линий-связей поверх тайлов, но под зданиями
+  drawConnectionLines();
 }
 
 // Фиксированные позиции для каждого типа здания (звезда на расстоянии 2 от центра)
@@ -1428,6 +1409,9 @@ function placeBuildingOnMap(buildingId) {
     i: pos.i, 
     j: pos.j 
   });
+  
+  // Обновляем соединения
+  initConnections();
 }
 
 // Система тултипов

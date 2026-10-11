@@ -368,6 +368,18 @@ body {
 
 
 
+/* ---------- Panel Top Mask ---------- */
+.panel-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: calc(var(--hud-h) + 16px);
+  background: linear-gradient(to bottom, var(--bg) 55%, transparent);
+  pointer-events: none;
+  z-index: 14;
+}
+
 /* ---------- Side Panel ---------- */
 .side-panel {
   grid-column: 2;
