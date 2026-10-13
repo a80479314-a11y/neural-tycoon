@@ -39,6 +39,12 @@ body {
   color: var(--text);
   font-family: 'Manrope', sans-serif;
   font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+body.ready {
+  opacity: 1;
 }
 
 /* ---------- Floor Grid ---------- */

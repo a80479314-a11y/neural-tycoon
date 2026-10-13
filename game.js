@@ -382,7 +382,15 @@ function isUpgradeVisible(upgrade) {
   return Object.keys(upgrade.req).every(bid => state.owned[bid] >= upgrade.req[bid]);
 }
 
+let hudUpdateTimeout = null;
 function updateHUD() {
+  // Throttling: обновляем HUD не чаще, чем раз в 50мс
+  if (hudUpdateTimeout) return;
+  
+  hudUpdateTimeout = setTimeout(() => {
+    hudUpdateTimeout = null;
+  }, 50);
+  
   const balanceEl = document.querySelector('[data-hud="balance"]');
   const incomeEl = document.querySelector('[data-hud="income"]');
   const keysEl = document.querySelector('[data-hud="keys"]');
@@ -1656,6 +1664,9 @@ function showBuildingTooltip(building, clientX, clientY) {
   const tooltip = document.getElementById('building-tooltip');
   if (!tooltip) return;
   
+  // Скрываем предыдущий тултип мгновенно
+  hideBuildingTooltip();
+  
   const buildingConfig = CONFIG.buildings.find(b => b.id === building.type);
   if (!buildingConfig) return;
   
@@ -2219,6 +2230,12 @@ if (document.readyState === 'loading') {
     
     initCanvas();
     animate();
+    
+    // Показываем страницу после первой отрисовки
+    requestAnimationFrame(() => {
+      document.body.classList.add('ready');
+    });
+    
     renderShop();
     renderUpgrades();
     renderManagers();
