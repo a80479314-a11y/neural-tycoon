@@ -176,6 +176,11 @@ function resetGame() {
   CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
   CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
   
+  // Очищаем карту зданий
+  mapBuildings.length = 0;
+  nextTileIndex = 0;
+  connections.length = 0;
+  
   // Обновляем UI
   updateHUD();
   updateShop();
@@ -188,6 +193,9 @@ function resetGame() {
   // Очищаем контракты
   const contractsEl = document.getElementById('contracts');
   if (contractsEl) contractsEl.innerHTML = '';
+  
+  // Перезаписываем сейв
+  saveGame();
 }
 
 // ========== Офлайн-прогресс ==========
