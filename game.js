@@ -436,6 +436,13 @@ function renderShop() {
       updateShop();
       updateUpgrades();
       updateHUD();
+      
+      // Вспышка карточки
+      const item = buyBtn.closest('.item');
+      if (item) {
+        item.classList.add('item--flash');
+        setTimeout(() => item.classList.remove('item--flash'), 400);
+      }
     }
   });
 }
@@ -949,31 +956,43 @@ function drawCore() {
   const { x, y } = tileToScreen(center, center);
   
   const size = 36; // Увеличен на 20%
-  const pulse = Math.sin(animTime * 2) * 0.1 + 1;
   
-  // Радиальный ореол под кубом
+  // Пульсация куба в такт доходу
+  const income = getIncome();
+  const incomePulse = income > 0 ? Math.sin(animTime * 3) * 0.02 + 1 : 1;
+  const pulse = incomePulse;
+  
+  // Вспышка от частиц
+  const flashBoost = coreFlash * 0.3;
+  
+  // Радиальный ореол под кубом (усиливается при вспышке)
   ctx.save();
-  const haloGradient = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 60);
-  haloGradient.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+  const haloGradient = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 60 + flashBoost * 20);
+  haloGradient.addColorStop(0, `rgba(124, 58, 237, ${0.25 + flashBoost * 0.3})`);
   haloGradient.addColorStop(1, 'rgba(124, 58, 237, 0)');
   ctx.fillStyle = haloGradient;
   ctx.beginPath();
-  ctx.arc(x, y + 10, 60, 0, Math.PI * 2);
+  ctx.arc(x, y + 10, 60 + flashBoost * 20, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
   
-  // Луч вверх (градиентный с glow)
+  // Луч вверх (динамический: толщина и длина зависят от дохода)
   ctx.save();
-  const beamGradient = ctx.createLinearGradient(x, y - size, x, y - size - 80);
-  beamGradient.addColorStop(0, 'rgba(233, 213, 255, 0.9)');
+  const incomeLog = income > 0 ? Math.log10(income + 1) : 0;
+  const beamWidth = 2 + Math.min(6, incomeLog * 1.5);
+  const beamLength = 60 + Math.min(60, incomeLog * 15);
+  const beamAlpha = 0.6 + Math.min(0.4, incomeLog * 0.1);
+  
+  const beamGradient = ctx.createLinearGradient(x, y - size, x, y - size - beamLength);
+  beamGradient.addColorStop(0, `rgba(233, 213, 255, ${beamAlpha + flashBoost})`);
   beamGradient.addColorStop(1, 'rgba(233, 213, 255, 0)');
-  ctx.shadowBlur = 25;
-  ctx.shadowColor = 'rgba(233, 213, 255, 0.8)';
+  ctx.shadowBlur = 20 + incomeLog * 5;
+  ctx.shadowColor = `rgba(233, 213, 255, ${0.6 + flashBoost * 0.4})`;
   ctx.strokeStyle = beamGradient;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = beamWidth;
   ctx.beginPath();
   ctx.moveTo(x, y - size);
-  ctx.lineTo(x, y - size - 80);
+  ctx.lineTo(x, y - size - beamLength);
   ctx.stroke();
   ctx.restore();
   
@@ -1061,7 +1080,24 @@ function drawBuildingAura(building) {
 function drawBuilding(building) {
   const { x, y } = tileToScreen(building.i, building.j);
   const pulse = Math.sin(animTime * 3 + building.tileIndex) * 0.1 + 1;
-  const scale = 0.85; // Масштаб объектов
+  let scale = 0.85; // Масштаб объектов
+  
+  // Анимация появления (scale 0→1 с overshoot)
+  const anim = buildingAnimations.get(building.type);
+  if (anim) {
+    const elapsed = animTime - anim.startTime;
+    const progress = Math.min(1, elapsed / anim.duration);
+    
+    if (progress >= 1) {
+      buildingAnimations.delete(building.type);
+    } else {
+      // Ease-out-back для overshoot эффекта
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      const eased = 1 + c3 * Math.pow(progress - 1, 3) + c1 * Math.pow(progress - 1, 2);
+      scale *= eased;
+    }
+  }
   
   // Аура
   drawBuildingAura(building);
@@ -1340,9 +1376,178 @@ function isTileUnderBuilding(i, j) {
   return mapBuildings.some(b => b.i === i && b.j === j);
 }
 
+// ========== Система анимационных эффектов ==========
+const MAX_PARTICLES = 60;
+const MAX_RIPPLES = 20;
+const particles = [];
+const ripples = [];
+const buildingAnimations = new Map(); // buildingId -> {scale, startTime}
+let prestigeEffect = null; // {startTime, duration}
+let lastParticleSpawn = 0;
+
+// Кольцевая вспышка при постройке
+function spawnRipple(i, j, color = 'rgba(168, 85, 247, 0.6)') {
+  if (ripples.length >= MAX_RIPPLES) ripples.shift();
+  const { x, y } = tileToScreen(i, j);
+  ripples.push({
+    x, y,
+    radius: 0,
+    maxRadius: 40,
+    alpha: 1,
+    color,
+    startTime: animTime,
+    duration: 0.5
+  });
+}
+
+// Анимация появления здания
+function spawnBuildingAnimation(buildingId) {
+  buildingAnimations.set(buildingId, {
+    scale: 0,
+    startTime: animTime,
+    duration: 0.4
+  });
+}
+
+// Частицы дохода
+function spawnIncomeParticles() {
+  const now = animTime;
+  if (now - lastParticleSpawn < 1) return; // Раз в секунду
+  lastParticleSpawn = now;
+  
+  const center = Math.floor(MAP_SIZE / 2);
+  const { x: coreX, y: coreY } = tileToScreen(center, center);
+  
+  mapBuildings.forEach(building => {
+    if (building.count <= 0) return;
+    
+    const particleCount = Math.min(3, Math.ceil(building.count / 2));
+    for (let i = 0; i < particleCount; i++) {
+      if (particles.length >= MAX_PARTICLES) break;
+      
+      const { x, y } = tileToScreen(building.i, building.j);
+      const color = BUILDING_AURAS[building.type] || '#a855f7';
+      
+      particles.push({
+        startX: x,
+        startY: y - 20,
+        endX: coreX,
+        endY: coreY,
+        progress: 0,
+        speed: 0.008 + Math.random() * 0.004,
+        color,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  });
+}
+
+// Вспышка на кубе при прибытии частицы
+let coreFlash = 0;
+
+// Ударный круг престижа
+function spawnPrestigeEffect() {
+  const center = Math.floor(MAP_SIZE / 2);
+  const { x, y } = tileToScreen(center, center);
+  prestigeEffect = {
+    x, y,
+    startTime: animTime,
+    duration: 0.8
+  };
+}
+
+// Отрисовка эффектов
+function drawEffects() {
+  const currentTime = animTime;
+  
+  // Кольцевые вспышки
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const ripple = ripples[i];
+    const elapsed = currentTime - ripple.startTime;
+    const progress = elapsed / ripple.duration;
+    
+    if (progress >= 1) {
+      ripples.splice(i, 1);
+      continue;
+    }
+    
+    const radius = ripple.maxRadius * progress;
+    const alpha = ripple.alpha * (1 - progress);
+    
+    ctx.save();
+    ctx.strokeStyle = ripple.color.replace('0.6', alpha.toString());
+    ctx.lineWidth = 3 * (1 - progress);
+    ctx.beginPath();
+    ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  
+  // Частицы дохода
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const particle = particles[i];
+    particle.progress += particle.speed;
+    
+    if (particle.progress >= 1) {
+      // Вспышка на кубе
+      coreFlash = 1;
+      particles.splice(i, 1);
+      continue;
+    }
+    
+    // Плавное движение с синусоидой
+    const t = particle.progress;
+    const easeT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const currentX = particle.startX + (particle.endX - particle.startX) * easeT;
+    const currentY = particle.startY + (particle.endY - particle.startY) * easeT;
+    const wave = Math.sin(t * Math.PI * 4 + particle.phase) * 5;
+    
+    ctx.save();
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = particle.color;
+    ctx.fillStyle = particle.color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.arc(currentX + wave, currentY, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  // Ударный круг престижа
+  if (prestigeEffect) {
+    const elapsed = currentTime - prestigeEffect.startTime;
+    const progress = elapsed / prestigeEffect.duration;
+    
+    if (progress >= 1) {
+      prestigeEffect = null;
+    } else {
+      const radius = 200 * progress;
+      const alpha = 0.6 * (1 - progress);
+      
+      ctx.save();
+      ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+      ctx.lineWidth = 8 * (1 - progress);
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = 'rgba(168, 85, 247, 0.8)';
+      ctx.beginPath();
+      ctx.arc(prestigeEffect.x, prestigeEffect.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
 // Основной цикл отрисовки
 function renderMap() {
   if (!ctx) return;
+  
+  // Спавн частиц дохода
+  spawnIncomeParticles();
+  
+  // Уменьшаем вспышку ядра
+  if (coreFlash > 0) {
+    coreFlash = Math.max(0, coreFlash - 0.05);
+  }
   
   // Очистка (в логических координатах до масштабирования)
   ctx.save();
@@ -1387,6 +1592,9 @@ function renderMap() {
   
   // Отрисовка линий-связей поверх тайлов, но под зданиями
   drawConnectionLines();
+  
+  // Отрисовка анимационных эффектов поверх всего
+  drawEffects();
 }
 
 // Фиксированные позиции для каждого типа здания (звезда на расстоянии 2 от центра)
@@ -1410,13 +1618,19 @@ function placeBuildingOnMap(buildingId) {
   const pos = BUILDING_POSITIONS[buildingId];
   if (!pos) return;
   
-  mapBuildings.push({ 
+  const newBuilding = { 
     type: buildingId, 
     tileIndex: 0, 
     count: 1, 
     i: pos.i, 
     j: pos.j 
-  });
+  };
+  
+  mapBuildings.push(newBuilding);
+  
+  // Эффекты постройки
+  spawnRipple(pos.i, pos.j, BUILDING_AURAS[buildingId] || 'rgba(168, 85, 247, 0.6)');
+  spawnBuildingAnimation(buildingId);
   
   // Обновляем соединения
   initConnections();
@@ -1756,6 +1970,21 @@ function confirmPrestige() {
   // Очищаем контракты
   const contractsEl = document.getElementById('contracts');
   if (contractsEl) contractsEl.innerHTML = '';
+  
+  // Очищаем карту зданий
+  mapBuildings.length = 0;
+  nextTileIndex = 0;
+  connections.length = 0;
+  
+  // Эффекты престижа
+  spawnPrestigeEffect();
+  
+  // Пульс ранг-ромба
+  const rankBadge = document.querySelector('.rank-badge__diamond');
+  if (rankBadge) {
+    rankBadge.classList.add('rank-badge__diamond--pulse');
+    setTimeout(() => rankBadge.classList.remove('rank-badge__diamond--pulse'), 600);
+  }
   
   closePrestigeModal();
   showToast(`Оригинальный стек: +${keys} ключей, ранг ${state.rank}`, 'success');

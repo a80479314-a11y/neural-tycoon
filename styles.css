@@ -500,6 +500,22 @@ body {
   box-shadow: none;
 }
 
+.item--flash {
+  animation: itemFlash 0.4s ease-out;
+}
+
+@keyframes itemFlash {
+  0% {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.8), inset 0 0 20px rgba(168, 85, 247, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+  }
+}
+
 /* ---------- Upgrades ---------- */
 .upgrades {
   display: flex;
@@ -1036,6 +1052,26 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.rank-badge__diamond--pulse {
+  animation: rankPulse 0.6s ease-out;
+}
+
+@keyframes rankPulse {
+  0% {
+    transform: rotate(45deg) scale(1);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  }
+  50% {
+    transform: rotate(45deg) scale(1.15);
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+  }
+  100% {
+    transform: rotate(45deg) scale(1);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  }
 }
 
 .rank-badge__value {
