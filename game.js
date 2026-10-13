@@ -2214,29 +2214,38 @@ function initHudResizeObserver() {
 }
 
 // Инициализация после загрузки DOM
+const reveal = () => document.body.classList.add('ready');
+
+// Надёжное навешивание класса .ready
+try {
+  if (document.readyState === 'loading') {
+    addEventListener('DOMContentLoaded', reveal, { once: true });
+  } else {
+    reveal();
+  }
+} finally {
+  // Фолбэк: если что-то пошло не так, CSS-анимация проявит страницу через 0.5s
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    // Загрузка сохранения
-    const saveData = loadGame();
-    if (saveData) {
-      applySaveData(saveData);
-      
-      // Офлайн-прогресс
-      const offlineData = calculateOfflineProgress(saveData);
-      if (offlineData) {
-        showOfflineModal(offlineData);
+    try {
+      // Загрузка сохранения
+      const saveData = loadGame();
+      if (saveData) {
+        applySaveData(saveData);
+        
+        // Офлайн-прогресс
+        const offlineData = calculateOfflineProgress(saveData);
+        if (offlineData) {
+          showOfflineModal(offlineData);
+        }
       }
-    }
-    
-    initCanvas();
-    animate();
-    
-    // Показываем страницу после первой отрисовки
-    requestAnimationFrame(() => {
-      document.body.classList.add('ready');
-    });
-    
-    renderShop();
+      
+      initCanvas();
+      animate();
+      
+      renderShop();
     renderUpgrades();
     renderManagers();
     renderQuests();
@@ -2356,23 +2365,28 @@ if (document.readyState === 'loading') {
       
       console.log('[DEBUG] Debug tools initialized'); // DEBUG_TOOL
     } // DEBUG_TOOL
+    } finally {
+      // Показываем страницу после первой отрисовки
+      requestAnimationFrame(reveal);
+    }
   });
 } else {
-  // Загрузка сохранения
-  const saveData = loadGame();
-  if (saveData) {
-    applySaveData(saveData);
-    
-    // Офлайн-прогресс
-    const offlineData = calculateOfflineProgress(saveData);
-    if (offlineData) {
-      showOfflineModal(offlineData);
+  try {
+    // Загрузка сохранения
+    const saveData = loadGame();
+    if (saveData) {
+      applySaveData(saveData);
+      
+      // Офлайн-прогресс
+      const offlineData = calculateOfflineProgress(saveData);
+      if (offlineData) {
+        showOfflineModal(offlineData);
+      }
     }
-  }
-  
-  initCanvas();
-  animate();
-  renderShop();
+    
+    initCanvas();
+    animate();
+    renderShop();
   renderUpgrades();
   renderManagers();
   renderQuests();
@@ -2493,6 +2507,10 @@ if (document.readyState === 'loading') {
     
     console.log('[DEBUG] Debug tools initialized'); // DEBUG_TOOL
   } // DEBUG_TOOL
+  } finally {
+    // Показываем страницу после первой отрисовки
+    requestAnimationFrame(reveal);
+  }
 }
 
 // ========== Система событий ==========

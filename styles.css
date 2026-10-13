@@ -29,6 +29,13 @@
   box-sizing: border-box;
 }
 
+/* Fail-safe reveal animation */
+@keyframes nt-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
 html,
 body {
   width: 100%;
@@ -40,11 +47,13 @@ body {
   font-family: 'Manrope', sans-serif;
   font-weight: 400;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  animation: nt-reveal 0.3s ease 0.5s forwards;
 }
 
 body.ready {
+  animation: none;
   opacity: 1;
+  transition: opacity 0.25s ease;
 }
 
 /* ---------- Floor Grid ---------- */
