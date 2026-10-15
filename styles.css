@@ -1668,3 +1668,266 @@ body.ready {
     max-width: 100%;
   }
 }
+
+/* ---------- Mobile Landscape (<900px, landscape) ---------- */
+@media (max-width: 900px) and (orientation: landscape) {
+  html, body {
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1fr clamp(280px, 38vw, 360px);
+    grid-template-rows: 100vh;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Compact header */
+  .header {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    z-index: 20;
+    padding: 0;
+  }
+
+  .header__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header__title {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .header__subtitle {
+    display: none;
+  }
+
+  .btn-research {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    min-height: 32px;
+  }
+
+  /* HUD chips overlay on left column */
+  .hud {
+    position: absolute;
+    top: 8px;
+    right: calc(clamp(280px, 38vw, 360px) + 12px);
+    z-index: 20;
+    display: flex;
+    gap: 6px;
+    padding: 0;
+  }
+
+  .hud__chip {
+    padding: 6px 10px;
+    min-width: 0;
+  }
+
+  .hud__chip-label {
+    font-size: 9px;
+  }
+
+  .hud__chip-value {
+    font-size: 14px;
+  }
+
+  .rank-badge {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+
+  .rank-badge__diamond {
+    width: 24px;
+    height: 24px;
+  }
+
+  .rank-badge__value {
+    font-size: 12px;
+  }
+
+  .rank-badge__label {
+    font-size: 8px;
+  }
+
+  .rank-rewards-line {
+    display: none;
+  }
+
+  /* Stage (map) in left column */
+  .stage {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .map-canvas {
+    width: 100%;
+    height: calc(100% - 80px);
+    max-width: none;
+  }
+
+  .stage__hint {
+    display: none;
+  }
+
+  /* Quests bar at bottom of left column */
+  .quests-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: clamp(280px, 38vw, 360px);
+    z-index: 20;
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: linear-gradient(to top, rgba(5, 3, 10, 0.9), transparent);
+    max-width: none;
+  }
+
+  .quest-slot {
+    min-width: 140px;
+    max-width: 160px;
+    height: 64px;
+    flex-shrink: 0;
+    padding: 8px 10px;
+  }
+
+  .quest-slot__label {
+    font-size: 8px;
+  }
+
+  .quest-slot__text {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .quest-slot__progress-bar {
+    height: 4px;
+  }
+
+  .quest-slot__stats {
+    font-size: 10px;
+  }
+
+  .quest-slot--next {
+    display: none;
+  }
+
+  /* Side panel in right column */
+  .side-panel {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    border-left: 1px solid var(--line);
+    border-top: none;
+    border-radius: 0;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .side-panel__title {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+
+  .side-panel__subtitle {
+    font-size: 10px;
+    margin-bottom: 12px;
+  }
+
+  /* Compact cards in panel */
+  .item {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  .item__name {
+    font-size: 13px;
+  }
+
+  .item__desc {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .item__price {
+    font-size: 12px;
+  }
+
+  .item__count {
+    font-size: 1.1rem;
+  }
+
+  .item__row {
+    gap: 8px;
+  }
+
+  .item__buy {
+    font-size: 0.75rem;
+    padding: 8px 14px;
+    min-height: 44px;
+  }
+
+  .panel-mask {
+    display: none;
+  }
+
+  /* Controls hidden in landscape */
+  .controls {
+    display: none;
+  }
+
+  /* Prestige pill compact */
+  .prestige-pill {
+    font-size: 0.7rem;
+    padding: 8px 16px;
+    bottom: 8px;
+    right: calc(clamp(280px, 38vw, 360px) + 8px);
+    left: auto;
+    transform: none;
+    min-height: 44px;
+  }
+
+  /* Debug badge position */
+  .debug-toggle {
+    bottom: 8px;
+    right: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 0.75rem;
+  }
+
+  .debug-panel {
+    bottom: 56px;
+    right: 8px;
+    width: 200px;
+  }
+
+  /* Touch-friendly */
+  .map-canvas {
+    touch-action: pan-y;
+  }
+
+  .building-tooltip {
+    pointer-events: none;
+  }
+}
