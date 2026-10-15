@@ -1484,6 +1484,17 @@ body.ready {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .header,
+  .quests-bar,
+  .hud,
+  .stage,
+  .side-panel {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .header {
@@ -1541,6 +1552,16 @@ body.ready {
   .stage {
     padding: 20px 16px;
     gap: 16px;
+    width: 100%;
+  }
+
+  .controls {
+    position: relative;
+    padding: 20px 16px;
+  }
+
+  .btn-buy {
+    display: none;
   }
 
   .map-canvas {
@@ -1594,6 +1615,8 @@ body.ready {
     border-top: 1px solid var(--line);
     border-radius: 0;
     padding: 20px 16px;
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .panel-mask {
@@ -1620,5 +1643,28 @@ body.ready {
 
   .prestige-modal__title {
     font-size: 1.2rem;
+  }
+
+  /* Touch-friendly buttons */
+  .item__buy,
+  .btn-research,
+  .btn-reset,
+  .prestige-pill,
+  .research__close {
+    min-height: 44px;
+  }
+
+  /* Prevent tooltip interference with scrolling */
+  .map-canvas {
+    touch-action: pan-y;
+  }
+
+  .building-tooltip {
+    pointer-events: none;
+  }
+
+  /* Ensure no horizontal scroll */
+  * {
+    max-width: 100%;
   }
 }
