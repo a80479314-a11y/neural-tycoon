@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0710" />
+  
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
 </head>
 <body>
 
@@ -39,6 +48,7 @@
             <line class="sound-icon__mute" x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" style="display:none"/>
           </svg>
         </button>
+        <button class="btn-install" id="install-btn" style="display:none">⤓ УСТАНОВИТЬ</button>
         <button class="btn-research" id="research-open">Исследования</button>
       </div>
     </header>
