@@ -1732,103 +1732,126 @@ body.ready {
 @media (max-width: 900px) and (orientation: landscape) {
   html, body {
     overflow: hidden;
+    height: 100dvh;
   }
 
   .app {
     display: grid;
-    grid-template-columns: 1fr clamp(280px, 38vw, 360px);
-    grid-template-rows: 100vh;
-    height: 100vh;
+    grid-template-columns: 1fr clamp(260px, 36vw, 340px);
+    grid-template-rows: 100dvh;
+    height: 100dvh;
     overflow: hidden;
   }
 
-  /* Compact header */
+  /* Left column: vertical grid layout */
+  .app > .header,
+  .app > .hud,
+  .app > .stage,
+  .app > .quests-bar {
+    grid-column: 1;
+  }
+
+  .app {
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  /* Row 1: Header with H1, sound, research */
   .header {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    z-index: 20;
-    padding: 0;
+    grid-row: 1;
+    position: relative;
+    padding: 8px 12px;
+    z-index: 10;
   }
 
   .header__row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
 
   .header__title {
-    font-size: 20px;
+    font-size: 17px;
     margin: 0;
+    white-space: nowrap;
   }
 
   .header__subtitle {
     display: none;
   }
 
-  .btn-research {
-    font-size: 0.7rem;
-    padding: 6px 12px;
-    min-height: 32px;
+  .btn-sound {
+    width: 32px;
+    height: 32px;
   }
 
-  /* HUD chips overlay on left column */
+  .btn-sound svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn-research {
+    font-size: 0.65rem;
+    padding: 6px 10px;
+    min-height: 32px;
+    white-space: nowrap;
+  }
+
+  /* Row 2: HUD chips + rank */
   .hud {
-    position: absolute;
-    top: 8px;
-    right: calc(clamp(280px, 38vw, 360px) + 12px);
-    z-index: 20;
+    grid-row: 2;
+    position: relative;
     display: flex;
     gap: 6px;
-    padding: 0;
+    padding: 6px 12px;
+    z-index: 10;
   }
 
   .hud__chip {
-    padding: 6px 10px;
+    padding: 4px 8px;
     min-width: 0;
+    flex: 1;
   }
 
   .hud__chip-label {
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .hud__chip-value {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .rank-badge {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 4px 8px;
+    flex: 1;
   }
 
   .rank-badge__diamond {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
 
   .rank-badge__value {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .rank-badge__label {
-    font-size: 8px;
+    font-size: 7px;
   }
 
   .rank-rewards-line {
     display: none;
   }
 
-  /* Stage (map) in left column */
+  /* Row 3: Map (stage) */
   .stage {
-    grid-column: 1;
-    grid-row: 1;
+    grid-row: 3;
     position: relative;
     padding: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -1836,7 +1859,7 @@ body.ready {
 
   .map-canvas {
     width: 100%;
-    height: calc(100% - 80px);
+    height: 100%;
     max-width: none;
   }
 
@@ -1844,58 +1867,67 @@ body.ready {
     display: none;
   }
 
-  /* Quests bar at bottom of left column */
+  /* Row 4: Quests bar */
   .quests-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: clamp(280px, 38vw, 360px);
-    z-index: 20;
+    grid-row: 4;
+    position: relative;
     display: flex;
     gap: 8px;
     padding: 8px 12px;
     overflow-x: auto;
     overflow-y: hidden;
-    background: linear-gradient(to top, rgba(5, 3, 10, 0.9), transparent);
-    max-width: none;
+    background: rgba(5, 3, 10, 0.8);
+    z-index: 10;
   }
 
   .quest-slot {
     min-width: 140px;
     max-width: 160px;
-    height: 64px;
+    height: 60px;
     flex-shrink: 0;
-    padding: 8px 10px;
+    padding: 6px 8px;
   }
 
   .quest-slot__label {
-    font-size: 8px;
+    font-size: 7px;
   }
 
   .quest-slot__text {
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.2;
   }
 
   .quest-slot__progress-bar {
-    height: 4px;
+    height: 3px;
   }
 
   .quest-slot__stats {
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .quest-slot--next {
     display: none;
   }
 
-  /* Side panel in right column */
+  /* Prestige pill: above quests bar */
+  .prestige-pill {
+    position: absolute;
+    bottom: 76px; /* quests bar height + 8px */
+    left: 50%;
+    transform: translateX(calc(-50% - clamp(260px, 36vw, 340px) / 2));
+    font-size: 0.7rem;
+    padding: 8px 16px;
+    min-height: 44px;
+    z-index: 15;
+  }
+
+  /* Right column: side panel */
   .side-panel {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 1 / -1;
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100dvh;
     border-left: 1px solid var(--line);
     border-top: none;
     border-radius: 0;
@@ -1904,13 +1936,13 @@ body.ready {
   }
 
   .side-panel__title {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 8px;
   }
 
   .side-panel__subtitle {
     font-size: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
   /* Compact cards in panel */
@@ -1920,29 +1952,29 @@ body.ready {
   }
 
   .item__name {
-    font-size: 13px;
-  }
-
-  .item__desc {
-    font-size: 11px;
-    margin-bottom: 8px;
-  }
-
-  .item__price {
     font-size: 12px;
   }
 
+  .item__desc {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+
+  .item__price {
+    font-size: 11px;
+  }
+
   .item__count {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .item__row {
-    gap: 8px;
+    gap: 6px;
   }
 
   .item__buy {
-    font-size: 0.75rem;
-    padding: 8px 14px;
+    font-size: 0.7rem;
+    padding: 8px 12px;
     min-height: 44px;
   }
 
@@ -1955,30 +1987,19 @@ body.ready {
     display: none;
   }
 
-  /* Prestige pill compact */
-  .prestige-pill {
-    font-size: 0.7rem;
-    padding: 8px 16px;
-    bottom: 8px;
-    right: calc(clamp(280px, 38vw, 360px) + 8px);
-    left: auto;
-    transform: none;
-    min-height: 44px;
-  }
-
   /* Debug badge position */
   .debug-toggle {
     bottom: 8px;
     right: 8px;
-    width: 40px;
-    height: 40px;
-    font-size: 0.75rem;
+    width: 36px;
+    height: 36px;
+    font-size: 0.7rem;
   }
 
   .debug-panel {
-    bottom: 56px;
+    bottom: 52px;
     right: 8px;
-    width: 200px;
+    width: 180px;
   }
 
   /* Touch-friendly */
