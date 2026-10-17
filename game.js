@@ -445,6 +445,9 @@ function renderShop() {
       updateUpgrades();
       updateHUD();
       
+      // Sound effect
+      if (window.AudioSystem) window.AudioSystem.playPurchase();
+      
       // Вспышка карточки
       const item = buyBtn.closest('.item');
       if (item) {
@@ -520,6 +523,9 @@ function renderUpgrades() {
       state.purchased[id] = true;
       updateUpgrades();
       updateHUD();
+      
+      // Sound effect
+      if (window.AudioSystem) window.AudioSystem.playUpgrade();
     }
   });
 }
@@ -639,6 +645,9 @@ function renderContractOffer() {
       
       showToast(`Контракт принят: ${formatNumber(state.contractActive.target)} за ${CONFIG.contracts.duration}s`, 'info');
       renderContractActive();
+      
+      // Sound effect
+      if (window.AudioSystem) window.AudioSystem.playContractAccept();
     });
   }
 }
@@ -706,6 +715,9 @@ function updateContractActive() {
     state.contractActive = null;
     const contractsEl = document.getElementById('contracts');
     if (contractsEl) contractsEl.innerHTML = '';
+    
+    // Sound effect
+    if (window.AudioSystem) window.AudioSystem.playContractSuccess();
     return;
   }
   
@@ -1820,6 +1832,9 @@ function completeQuest() {
   showToast(`Квест выполнен: +${formatNumber(quest.reward)}`, 'success');
   state.questIndex++;
   renderQuests();
+  
+  // Sound effect
+  if (window.AudioSystem) window.AudioSystem.playQuest();
 }
 
 function renderQuests() {
@@ -1999,6 +2014,9 @@ function confirmPrestige() {
   
   closePrestigeModal();
   showToast(`Оригинальный стек: +${keys} ключей, ранг ${state.rank}`, 'success');
+  
+  // Sound effect
+  if (window.AudioSystem) window.AudioSystem.playPrestige();
 }
 
 function updateRankBadge() {
@@ -2046,6 +2064,9 @@ function buyTech(techId) {
   state.tech[techId] = true;
   renderResearchOverlay();
   updateHUD();
+  
+  // Sound effect
+  if (window.AudioSystem) window.AudioSystem.playUpgrade();
 }
 
 function renderResearchOverlay() {
@@ -2267,20 +2288,51 @@ if (document.readyState === 'loading') {
     
     // Обработчики оверлея
     const openBtn = document.getElementById('research-open');
-    if (openBtn) openBtn.addEventListener('click', openResearchOverlay);
+    if (openBtn) openBtn.addEventListener('click', () => {
+      openResearchOverlay();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
     
     const closeBtn = document.getElementById('research-close');
-    if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      closeResearchOverlay();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
+    
+    // Обработчик кнопки звука
+    const soundToggle = document.getElementById('sound-toggle');
+    if (soundToggle) {
+      // Установить начальное состояние
+      if (window.AudioSystem && window.AudioSystem.isAudioMuted()) {
+        soundToggle.classList.add('muted');
+      }
+      
+      soundToggle.addEventListener('click', () => {
+        if (window.AudioSystem) {
+          const muted = window.AudioSystem.toggleMute();
+          soundToggle.classList.toggle('muted', muted);
+        }
+      });
+    }
     
     // Обработчики престижа
     const prestigePill = document.getElementById('prestige-pill');
-    if (prestigePill) prestigePill.addEventListener('click', openPrestigeModal);
+    if (prestigePill) prestigePill.addEventListener('click', () => {
+      openPrestigeModal();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
     
     const prestigeConfirm = document.getElementById('prestige-confirm');
-    if (prestigeConfirm) prestigeConfirm.addEventListener('click', confirmPrestige);
+    if (prestigeConfirm) prestigeConfirm.addEventListener('click', () => {
+      confirmPrestige();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
     
     const prestigeCancel = document.getElementById('prestige-cancel');
-    if (prestigeCancel) prestigeCancel.addEventListener('click', closePrestigeModal);
+    if (prestigeCancel) prestigeCancel.addEventListener('click', () => {
+      closePrestigeModal();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
     
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -2411,18 +2463,50 @@ if (document.readyState === 'loading') {
     if (resetBtn) resetBtn.addEventListener('click', resetGame);
     
     const openBtn = document.getElementById('research-open');
-    if (openBtn) openBtn.addEventListener('click', openResearchOverlay);  
-  const closeBtn = document.getElementById('research-close');
-  if (closeBtn) closeBtn.addEventListener('click', closeResearchOverlay);
+    if (openBtn) openBtn.addEventListener('click', () => {
+      openResearchOverlay();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
+    
+    const closeBtn = document.getElementById('research-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      closeResearchOverlay();
+      if (window.AudioSystem) window.AudioSystem.playClickUI();
+    });
+    
+    // Обработчик кнопки звука
+    const soundToggle = document.getElementById('sound-toggle');
+    if (soundToggle) {
+      // Установить начальное состояние
+      if (window.AudioSystem && window.AudioSystem.isAudioMuted()) {
+        soundToggle.classList.add('muted');
+      }
+      
+      soundToggle.addEventListener('click', () => {
+        if (window.AudioSystem) {
+          const muted = window.AudioSystem.toggleMute();
+          soundToggle.classList.toggle('muted', muted);
+        }
+      });
+    }
   
   const prestigePill = document.getElementById('prestige-pill');
-  if (prestigePill) prestigePill.addEventListener('click', openPrestigeModal);
+  if (prestigePill) prestigePill.addEventListener('click', () => {
+    openPrestigeModal();
+    if (window.AudioSystem) window.AudioSystem.playClickUI();
+  });
   
   const prestigeConfirm = document.getElementById('prestige-confirm');
-  if (prestigeConfirm) prestigeConfirm.addEventListener('click', confirmPrestige);
+  if (prestigeConfirm) prestigeConfirm.addEventListener('click', () => {
+    confirmPrestige();
+    if (window.AudioSystem) window.AudioSystem.playClickUI();
+  });
   
   const prestigeCancel = document.getElementById('prestige-cancel');
-  if (prestigeCancel) prestigeCancel.addEventListener('click', closePrestigeModal);
+  if (prestigeCancel) prestigeCancel.addEventListener('click', () => {
+    closePrestigeModal();
+    if (window.AudioSystem) window.AudioSystem.playClickUI();
+  });
   
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -2564,10 +2648,16 @@ function triggerEvent() {
     // Зелёный тост + штамп
     showToast('Серый шлюз заблокирован: ZERO SPOOFING', 'success');
     showStamp();
+    
+    // Sound effect
+    if (window.AudioSystem) window.AudioSystem.playGatewayBlocked();
   } else {
     // Красный тост + дебафф
     showToast('Серый шлюз перехватывает трафик: −50% дохода на 20s', 'danger');
     state.debuffUntil = Date.now() + 20000; // 20 секунд
+    
+    // Sound effect
+    if (window.AudioSystem) window.AudioSystem.playGatewayHit();
   }
 }
 
