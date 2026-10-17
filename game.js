@@ -35,6 +35,30 @@ CONFIG.upgrades.forEach(u => { state.purchased[u.id] = false; });
 CONFIG.managers.forEach(m => { state.managers[m.id] = false; });
 CONFIG.tech.forEach(t => { state.tech[t.id] = false; });
 
+// ========== Полноэкранный режим для мобильного ландшафта ==========
+const fullscreenMediaQuery = window.matchMedia('(max-width:900px) and (orientation:landscape)');
+let fullscreenRequested = false;
+
+function requestFullscreenOnFirstTouch() {
+  if (fullscreenRequested) return;
+  
+  if (fullscreenMediaQuery.matches) {
+    try {
+      document.documentElement.requestFullscreen({ navigationUI: 'hide' })
+        .then(() => {
+          fullscreenRequested = true;
+        })
+        .catch((err) => {
+          console.warn('Fullscreen request failed:', err);
+        });
+    } catch (err) {
+      console.warn('Fullscreen not supported:', err);
+    }
+  }
+}
+
+document.addEventListener('pointerdown', requestFullscreenOnFirstTouch, { once: true });
+
 // ========== Система сохранений ==========
 function saveGame() {
   try {

@@ -3,7 +3,7 @@
   "short_name": "NeuralTycoon",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#0b0710",
   "theme_color": "#0b0710",
