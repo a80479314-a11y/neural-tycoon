@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neural Tycoon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0710" />
+  
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+</head>
+<body>
+
+  <!-- Floor Grid -->
+  <div class="floor">
+    <div class="floor__grid"></div>
+    <div class="floor__mask"></div>
+  </div>
+
+  <!-- Vignette -->
+  <div class="vignette"></div>
+
+  <!-- Top Glow -->
+  <div class="top-glow"></div>
+
+  <!-- App Layout -->
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header__row">
+        <div>
+          <h1 class="header__title">Neural Tycoon</h1>
+          <p class="header__subtitle">Построй империю нейросетей — от перцептрона до сингулярности</p>
+        </div>
+        <button class="btn-sound" id="sound-toggle" title="Звук вкл/выкл">
+          <svg class="sound-icon" viewBox="0 0 24 24" width="24" height="24">
+            <path class="sound-icon__speaker" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+            <path class="sound-icon__wave" d="M14 3.23v2.01c2.89.86 5 3.54 5 6.76s-2.11 5.9-5 6.76v2.01c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            <line class="sound-icon__mute" x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" style="display:none"/>
+          </svg>
+        </button>
+        <button class="btn-install" id="install-btn" style="display:none">⤓ УСТАНОВИТЬ</button>
+        <button class="btn-research" id="research-open">Исследования</button>
+      </div>
+    </header>
+
+    <!-- Quests Bar -->
+    <div class="quests-bar" id="quests"></div>
+
+    <!-- HUD Chips -->
+    <div class="hud">
+      <div class="hud__chip">
+        <span class="hud__chip-label">Баланс</span>
+        <span class="hud__chip-value" data-hud="balance">0</span>
+      </div>
+      <div class="hud__chip">
+        <span class="hud__chip-label">Доход</span>
+        <span class="hud__chip-value" data-hud="income">+0/s</span>
+      </div>
+      <div class="hud__chip">
+        <span class="hud__chip-label">Ключи</span>
+        <span class="hud__chip-value" data-hud="keys">0</span>
+      </div>
+      <div class="hud__chip">
+        <span class="hud__chip-label">Наука</span>
+        <span class="hud__chip-value" data-hud="science">0</span>
+      </div>
+      <div class="rank-badge" id="rank-badge">
+        <div class="rank-badge__diamond">
+          <span class="rank-badge__value">0</span>
+        </div>
+        <div class="rank-badge__label">РАНГ</div>
+        <div class="rank-rewards-line" id="rank-rewards-line" title="НАГРАДЫ ЗА РАНГ: Награда контрактов +10% (ранг 1)">НАГРАДЫ ЗА РАНГ: Награда контрактов +10% (ранг 1)</div>
+      </div>
+    </div>
+
+    <!-- Center Stage — Isometric Map Canvas -->
+    <main class="stage">
+      <canvas id="map" class="map-canvas"></canvas>
+      <div class="building-tooltip" id="building-tooltip" style="display:none"></div>
+      <div class="stage__hint">ядро — сердце сети. Доход приносят модули</div>
+    </main>
+
+    <!-- Panel Top Mask -->
+    <div class="panel-mask" id="panel-mask"></div>
+
+    <!-- Side Panel -->
+    <aside class="side-panel">
+      <div class="side-panel__title">Контракты</div>
+      <div class="contracts" id="contracts"></div>
+
+      <div class="side-panel__title" style="margin-top:24px">Магазин модулей</div>
+      <div class="side-panel__subtitle">закрываем потребности разработчика</div>
+      <div class="shop" id="shop"></div>
+
+      <div class="side-panel__title" style="margin-top:24px">Апгрейды</div>
+      <div class="upgrades" id="upgrades"></div>
+
+      <div class="side-panel__title" style="margin-top:24px">Менеджеры</div>
+      <div class="managers" id="managers"></div>
+    </aside>
+
+    <!-- Bottom Controls -->
+    <div class="controls">
+      <button class="btn-buy" hidden>Купить</button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" style="display:none"></div>
+
+  <!-- Stamp -->
+  <div class="stamp" id="stamp" style="display:none">
+    <span>100% GENUINE<br/>ZERO SPOOFING</span>
+  </div>
+
+  <!-- Reset Button -->
+  <button class="btn-reset">сброс</button>
+
+  <!-- Research Overlay -->
+  <div class="research-overlay" id="research-overlay" style="display:none">
+    <div class="research__header">
+      <h2 class="research__title">Дерево технологий</h2>
+      <button class="research__close" id="research-close">✕</button>
+    </div>
+    <div class="research__status" id="research-status"></div>
+    <div class="research__hint">Наука приходит из контрактов и квестов</div>
+    <div class="research__content"></div>
+  </div>
+
+  <!-- Prestige Pill -->
+  <button class="prestige-pill" id="prestige-pill" style="display:none">⚡ ОРИГИНАЛЬНЫЙ СТЕК</button>
+
+  <!-- Prestige Modal -->
+  <div class="prestige-modal" id="prestige-modal" style="display:none">
+    <div class="prestige-modal__content">
+      <h2 class="prestige-modal__title">ПЕРЕЙТИ НА ОРИГИНАЛЬНЫЙ СТЕК</h2>
+      <p class="prestige-modal__desc">Сброс прогресса в обмен на GWARP-ключи и ранг</p>
+      <div class="prestige__rewards"></div>
+      <div class="prestige-modal__warning">Здания, апгрейды, менеджеры и контракты будут сброшены. Квесты, технологии, наука, ключи и ранг сохранятся.</div>
+      <div class="prestige-modal__buttons">
+        <button class="prestige-modal__btn prestige-modal__btn--confirm" id="prestige-confirm">ПОДТВЕРДИТЬ</button>
+        <button class="prestige-modal__btn prestige-modal__btn--cancel" id="prestige-cancel">ОТМЕНА</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
