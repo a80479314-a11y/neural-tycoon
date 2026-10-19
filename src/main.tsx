@@ -14,6 +14,14 @@ if ('serviceWorker' in navigator && (import.meta as any).env?.PROD) {
     navigator.serviceWorker.register('./sw.js')
       .then((registration) => {
         console.log('[SW] Registered successfully:', registration.scope);
+        
+        // Auto-reload when new SW takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
       })
       .catch((error) => {
         console.warn('[SW] Registration failed:', error);
