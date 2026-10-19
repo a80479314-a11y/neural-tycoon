@@ -1,4 +1,5 @@
-const CACHE_NAME = 'nt-v1';
+// Dynamic cache version - auto-updates on each build
+const CACHE_NAME = 'nt-v' + Date.now();
 const PRECACHE_URLS = [
   './',
   './index.html',

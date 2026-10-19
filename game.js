@@ -453,6 +453,7 @@ function renderShop() {
   
   // Обработчики покупки
   shopEl.addEventListener('click', (e) => {
+    requestFullscreenOnFirstTouch();
     const buyBtn = e.target.closest('[data-buy]');
     if (!buyBtn) return;
     
@@ -535,6 +536,7 @@ function renderUpgrades() {
   
   // Обработчики покупки апгрейдов
   upgradesEl.addEventListener('click', (e) => {
+    requestFullscreenOnFirstTouch();
     const buyBtn = e.target.closest('[data-buy-upgrade]');
     if (!buyBtn || buyBtn.disabled) return;
     
@@ -809,6 +811,7 @@ function renderManagers() {
   
   // Обработчики найма
   managersEl.addEventListener('click', (e) => {
+    requestFullscreenOnFirstTouch();
     const hireBtn = e.target.closest('[data-hire-manager]');
     if (!hireBtn || hireBtn.disabled) return;
     
@@ -2313,6 +2316,7 @@ if (document.readyState === 'loading') {
     // Обработчики оверлея
     const openBtn = document.getElementById('research-open');
     if (openBtn) openBtn.addEventListener('click', () => {
+      requestFullscreenOnFirstTouch();
       openResearchOverlay();
       if (window.AudioSystem) window.AudioSystem.playClickUI();
     });
@@ -2342,6 +2346,7 @@ if (document.readyState === 'loading') {
     // Обработчики престижа
     const prestigePill = document.getElementById('prestige-pill');
     if (prestigePill) prestigePill.addEventListener('click', () => {
+      requestFullscreenOnFirstTouch();
       openPrestigeModal();
       if (window.AudioSystem) window.AudioSystem.playClickUI();
     });
