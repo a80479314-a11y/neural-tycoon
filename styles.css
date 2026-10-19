@@ -1855,6 +1855,7 @@ body.ready {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    min-height: 0;
   }
 
   .map-canvas {
@@ -1911,10 +1912,10 @@ body.ready {
 
   /* Prestige pill: above quests bar */
   .prestige-pill {
-    position: absolute;
-    bottom: 76px; /* quests bar height + 8px */
-    left: 50%;
-    transform: translateX(calc(-50% - clamp(260px, 36vw, 340px) / 2));
+    position: fixed;
+    bottom: 88px; /* quests bar ~76px + 12px gap */
+    left: calc((100vw - clamp(260px, 36vw, 340px)) / 2);
+    transform: translateX(-50%);
     font-size: 0.7rem;
     padding: 8px 16px;
     min-height: 44px;
@@ -2009,5 +2010,47 @@ body.ready {
 
   .building-tooltip {
     pointer-events: none;
+  }
+
+  /* Research overlay in landscape */
+  .research-overlay {
+    padding: 16px;
+  }
+
+  .research__content {
+    max-width: 100%;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+  }
+
+  .research__node {
+    max-width: 260px;
+    padding: 10px;
+  }
+
+  .research__node-name {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .research__node-desc {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .research__node-cost {
+    font-size: 12px;
+  }
+
+  .research__node-status {
+    font-size: 10px;
+  }
+
+  .research__node-lock {
+    font-size: 16px;
+  }
+
+  .research__node-deficit {
+    font-size: 10px;
   }
 }
