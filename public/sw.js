@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first strategy for same-origin GET requests
+// Fetch: network-first strategy for key assets, cache-first for others
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
@@ -42,22 +42,54 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      
-      return fetch(request).then((networkResponse) => {
-        // Cache successful responses
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
+  // Key assets that should always be fresh when online
+  const isKeyAsset = 
+    request.destination === 'document' || // HTML
+    request.destination === 'script' ||   // JS
+    request.destination === 'style' ||    // CSS
+    request.url.includes('manifest.webmanifest') ||
+    request.url.includes('icon.svg') ||
+    request.url.includes('version.json');
+  
+  if (isKeyAsset) {
+    // Network-first: try network, fallback to cache
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // Update cache with fresh version
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network failed, try cache
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || new Response('Offline', { status: 503 });
           });
+        })
+    );
+  } else {
+    // Cache-first for other assets (images, fonts, etc.)
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        return networkResponse;
-      });
-    })
-  );
+        
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        });
+      })
+    );
+  }
 });

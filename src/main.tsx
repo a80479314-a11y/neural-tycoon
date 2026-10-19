@@ -26,6 +26,31 @@ if ('serviceWorker' in navigator && (import.meta as any).env?.PROD) {
       .catch((error) => {
         console.warn('[SW] Registration failed:', error);
       });
+    
+    // Check version and clear cache if outdated
+    fetch('./version.json', { cache: 'no-store' })
+      .then(response => response.json())
+      .then(data => {
+        const currentVersion = localStorage.getItem('nt_version');
+        if (currentVersion && currentVersion !== data.version) {
+          console.log('[PWA] Version changed, clearing cache...');
+          caches.keys().then(cacheNames => {
+            return Promise.all(
+              cacheNames
+                .filter(name => name.startsWith('nt-v'))
+                .map(name => caches.delete(name))
+            );
+          }).then(() => {
+            localStorage.setItem('nt_version', data.version);
+            window.location.reload();
+          });
+        } else if (!currentVersion) {
+          localStorage.setItem('nt_version', data.version);
+        }
+      })
+      .catch(error => {
+        console.warn('[PWA] Version check failed:', error);
+      });
   });
 }
 
